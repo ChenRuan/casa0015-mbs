@@ -7,6 +7,10 @@ This section has a short introduction to what the application is
 
 https://www.figma.com/file/ORbpV68846xk6SXxjxOate/Untitled?type=design&node-id=0%3A1&mode=design&t=ONFujuyOqLnkDlVs-1
 
+![image](https://github.com/ChenRuan/casa0015-mbs/assets/145383140/dc3385d5-5d70-4e10-974f-0ae627a877cf)
+
+![image](https://github.com/ChenRuan/casa0015-mbs/assets/145383140/49fe7559-b798-4a98-9a4e-39a1a8582502)
+
 ## Use this README File 
 
 Use this section to show us what your Mobile App is about.   Include a Screenshot to the App, link to the various frameworks you've used. Include your presentation video here that shows off your Mobile App.   Emojis are also fun to include 📱 😄
