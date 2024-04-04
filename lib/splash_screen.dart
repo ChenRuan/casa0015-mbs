@@ -20,7 +20,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Image.asset('assets/logo.png'), // 确保图片路径正确
+        child: Image.asset('assets/logo.png'),
       ),
     );
   }
