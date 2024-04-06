@@ -1,27 +1,8 @@
+import 'package:eztour/data.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
-
-class Plan {
-  String name;
-  DateTime startDate;
-  DateTime endDate;
-
-  Plan({required this.name, required this.startDate, required this.endDate});
-
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'startDate': startDate.toIso8601String(),
-    'endDate': endDate.toIso8601String(),
-  };
-
-  factory Plan.fromJson(Map<String, dynamic> json) => Plan(
-    name: json['name'],
-    startDate: DateTime.parse(json['startDate']),
-    endDate: DateTime.parse(json['endDate']),
-  );
-}
 
 class AddNewPlanPage extends StatefulWidget {
   final Plan? plan;
@@ -35,6 +16,8 @@ class _AddPlanPageState extends State<AddNewPlanPage> {
   final _nameController = TextEditingController();
   final _startDateController = TextEditingController();
   final _endDateController = TextEditingController();
+  final _travelDaysController = TextEditingController();
+  final _notesController = TextEditingController();
 
   @override
   void initState() {
@@ -44,6 +27,8 @@ class _AddPlanPageState extends State<AddNewPlanPage> {
       _nameController.text = widget.plan!.name;
       _startDateController.text = widget.plan!.startDate.toIso8601String().split('T').first;
       _endDateController.text = widget.plan!.endDate.toIso8601String().split('T').first;
+      _travelDaysController.text = widget.plan!.travelDays.toString();
+      _notesController.text = widget.plan!.notes;
     }
   }
 
@@ -51,46 +36,81 @@ class _AddPlanPageState extends State<AddNewPlanPage> {
     if (_formKey.currentState!.validate()) {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       List<String> plansList = prefs.getStringList('plans') ?? [];
+      int travelDays = int.tryParse(_travelDaysController.text) ?? 0;
+
+      Plan newPlan = Plan(
+        name: _nameController.text,
+        startDate: DateTime.parse(_startDateController.text),
+        endDate: DateTime.parse(_endDateController.text),
+        travelDays: travelDays,
+        notes: _notesController.text,
+      );
+
+      String planJson = json.encode(newPlan.toJson());
 
       if (widget.plan != null) {
-        // Modify the plan
+        // 修改现有计划
         final index = plansList.indexWhere((plan) =>
         Plan.fromJson(json.decode(plan)).name == widget.plan!.name);
         if (index != -1) {
-          plansList[index] = json.encode(Plan(
-            name: _nameController.text,
-            startDate: DateTime.parse(_startDateController.text),
-            endDate: DateTime.parse(_endDateController.text),
-          ).toJson());
+          plansList[index] = planJson;
         }
       } else {
-        // Add a new plan
-        plansList.add(json.encode(Plan(
-          name: _nameController.text,
-          startDate: DateTime.parse(_startDateController.text),
-          endDate: DateTime.parse(_endDateController.text),
-        ).toJson()));
+        // 添加新计划
+        plansList.add(planJson);
       }
 
-      // Save new plan list
+      // 保存新计划列表
       await prefs.setStringList('plans', plansList);
 
-      // Go back
+      // 返回上一页面
       Navigator.pop(context);
     }
   }
 
   // Helper function to show date picker dialog
-  Future<void> _selectDate(BuildContext context, TextEditingController controller) async {
+// Helper function to show date picker dialog
+  Future<void> _selectDate(BuildContext context, TextEditingController controller, {bool isStartDate = true}) async {
+    final DateTime initialDate = controller.text.isNotEmpty
+        ? DateTime.parse(controller.text)
+        : DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: controller.text.isNotEmpty ? DateTime.parse(controller.text) : DateTime.now(),
+      initialDate: initialDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
-    if (picked != null && picked != DateTime.parse(controller.text)) {
+    if (picked != null && picked != initialDate) {
       // Format the selected date and show it in the text field
       controller.text = DateFormat('yyyy-MM-dd').format(picked);
+      // After date is picked, update days or the end date accordingly
+      if (isStartDate) {
+        // If start date was picked, update the end date based on travel days
+        _updateDatesAndDays(updateDays: false);
+      } else {
+        // If end date was picked, just update travel days
+        _updateDatesAndDays(updateDays: false);
+      }
+    }
+  }
+
+  void _updateDatesAndDays({bool updateDays = false}) {
+    final startDate = DateTime.tryParse(_startDateController.text);
+    if (startDate != null) {
+      if (updateDays) {
+        // 用户更改了旅行天数
+        int days = int.tryParse(_travelDaysController.text) ?? 0;
+        _endDateController.text = DateFormat('yyyy-MM-dd').format(
+            startDate.add(Duration(days: days))
+        );
+      } else {
+        // 用户更改了日期
+        final endDate = DateTime.tryParse(_endDateController.text);
+        if (endDate != null) {
+          int days = endDate.difference(startDate).inDays;
+          _travelDaysController.text = days.toString();
+        }
+      }
     }
   }
 
@@ -99,6 +119,12 @@ class _AddPlanPageState extends State<AddNewPlanPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.plan != null ? 'Modify the Plan' : 'Add New Plan'),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.check),
+            onPressed: _savePlan, // 这里使用先前定义的 _savePlan 方法
+          ),
+        ],
       ),
       body: Form(
         key: _formKey,
@@ -121,6 +147,7 @@ class _AddPlanPageState extends State<AddNewPlanPage> {
               readOnly: true,
               onTap: () {
                 _selectDate(context, _startDateController);
+                _updateDatesAndDays();
               },
               validator: (value) {
                 if (value == null || value.isEmpty || DateTime.tryParse(value) == null) {
@@ -135,6 +162,7 @@ class _AddPlanPageState extends State<AddNewPlanPage> {
               readOnly: true, // 使文本字段只读
               onTap: () {
                 _selectDate(context, _endDateController);
+                _updateDatesAndDays();
               },
               validator: (value) {
                 if (value == null || value.isEmpty || DateTime.tryParse(value) == null) {
@@ -143,10 +171,25 @@ class _AddPlanPageState extends State<AddNewPlanPage> {
                 return null;
               },
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _savePlan,
-              child: Text('Save Plan'),
+            TextFormField(
+              controller: _travelDaysController,
+              decoration: InputDecoration(labelText: 'Travel Days'),
+              keyboardType: TextInputType.number,
+              onChanged: (value) {
+                if (value.isNotEmpty) {
+                  _updateDatesAndDays(updateDays: true);
+                }
+              },
+            ),
+            TextFormField(
+              controller: _notesController,
+              decoration: InputDecoration(
+                labelText: 'Notes (Optional)',
+                alignLabelWithHint: true,
+              ),
+              keyboardType: TextInputType.multiline,  // 设置键盘类型为多行文本
+              textInputAction: TextInputAction.newline,  // 设置回车键动作为换行，适用于某些键盘布局
+              maxLines: null,
             ),
           ],
         ),
@@ -160,6 +203,7 @@ class _AddPlanPageState extends State<AddNewPlanPage> {
     _nameController.dispose();
     _startDateController.dispose();
     _endDateController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 }

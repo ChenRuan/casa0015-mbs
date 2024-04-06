@@ -1,4 +1,6 @@
+import 'package:eztour/data.dart';
 import 'package:eztour/plans_add_new_plan.dart';
+import 'package:eztour/plans_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -20,10 +22,16 @@ class _PlansPageState extends State<PlansPage> {
   Future<void> _loadPlans() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String>? savedPlansString = prefs.getStringList('plans');
-    if (savedPlansString != null) {
-      setState(() {
-        _plans = savedPlansString.map((planString) => Plan.fromJson(json.decode(planString))).toList();
-      });
+    try {
+      if (savedPlansString != null) {
+        setState(() {
+          _plans = savedPlansString.map((planString) => Plan.fromJson(json.decode(planString))).toList();
+        });
+      }
+    } catch (e) {
+      // 如果发生错误，例如json解析错误，可以在这里处理
+      debugPrint('Error loading plans: $e');
+      // 可能需要一个状态或弹出提示用户数据加载失败
     }
   }
 
@@ -65,6 +73,13 @@ class _PlansPageState extends State<PlansPage> {
                   ),
                 ],
               ),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => PlanDetailPage(plan: plan),
+                  ),
+                );
+              },
             ),
           );
         },
