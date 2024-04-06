@@ -70,7 +70,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     if (index != -1) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => DetailFormPage(planItem: _planItems[index],planId: _planItems[index].id,type: _planItems[index].type ,day: _planItems[index].day)),
+        MaterialPageRoute(builder: (context) => DetailFormPage(planItem: _planItems[index],planId: _planItems[index].planId,type: _planItems[index].type ,day: _planItems[index].day)),
       ).then((_) => _loadPlanItems());
     }
   }
@@ -123,7 +123,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                 return Card(
                   child: ListTile(
                     title: Text(item.title),
-                    subtitle: Text(item.type), // Customize with item details
+                    subtitle: Text(item.startTime??'1'), // Customize with item details
                     trailing: PopupMenuButton<String>(
                       onSelected: (String result) {
                         if (result == 'modify') {
@@ -164,7 +164,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                 ),
               ),
               Text('Day $_currentDay/${_totalDays}',
-                  style: Theme.of(context).textTheme.headline6),
+                  style: Theme.of(context).textTheme.titleLarge),
               Padding(
                 padding: EdgeInsets.only(right: arrowButtonPadding),
                 child: IconButton(

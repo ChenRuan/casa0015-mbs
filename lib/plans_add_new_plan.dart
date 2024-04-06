@@ -51,7 +51,7 @@ class _AddPlanPageState extends State<AddNewPlanPage> {
       if (widget.plan != null) {
         // 修改现有计划
         final index = plansList.indexWhere((plan) =>
-        Plan.fromJson(json.decode(plan)).name == widget.plan!.name);
+        Plan.fromJson(json.decode(plan)).id == widget.plan!.id);
         if (index != -1) {
           plansList[index] = planJson;
         }

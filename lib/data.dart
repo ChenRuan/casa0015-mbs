@@ -63,13 +63,13 @@ class PlanItem {
     required this.title,
     this.startTime,
     this.endTime,
-    this.notes,
     this.location,
     this.placeLat,
     this.placeLng,
     this.locationDes,
     this.placeDesLat,
     this.placeDesLng,
+    this.notes,
   });
 
   Map<String, dynamic> toJson() => {

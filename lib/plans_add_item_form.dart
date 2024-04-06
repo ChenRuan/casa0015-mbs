@@ -11,9 +11,10 @@ class DetailFormPage extends StatefulWidget {
   final String planId;
   final String type;
   final int day;
+  String? id;
   PlanItem? planItem;
 
-  DetailFormPage({Key? key, this.planItem, required this.planId, required this.type, required this.day}) : super(key: key);
+  DetailFormPage({Key? key, this.planItem, this.id, required this.planId, required this.type, required this.day}) : super(key: key);
 
   @override
   _DetailFormPageState createState() => _DetailFormPageState();
@@ -56,32 +57,39 @@ class _DetailFormPageState extends State<DetailFormPage> {
       List<String> itemsList = prefs.getStringList(itemsKey) ?? [];
       Uuid uuid = Uuid();
 
-      Map<String, dynamic> newItem = {
-        'id': uuid.v4(),
-        'planId': widget.planId,
-        'day': widget.day, // 示例，根据实际逻辑设置
-        'type': widget.type,
-        'title': _titleController.text,
+      PlanItem newItem = PlanItem(
+        id: widget.planItem != null ? widget.planItem!.id : uuid.v4(),
+        planId: widget.planId,
+        day: widget.day, // 示例，根据实际逻辑设置
+        type: widget.type,
+        title: _titleController.text,
 
         // 以下是条件性添加的属性
 
-        if (_startTimeController.text.isNotEmpty) 'startTime': _startTimeController.text,
-        if (_endTimeController.text.isNotEmpty) 'endTime': _endTimeController.text,
-        if (_locationController.text.isNotEmpty) 'location': _locationController.text,
-        if (_currentPosition != null) 'placeLat': _currentPosition.latitude,
-        if (_currentPosition != null) 'placeLng': _currentPosition.longitude,
+        startTime: _startTimeController.text.isNotEmpty ? _startTimeController.text : null,
+        endTime: _endTimeController.text.isNotEmpty ? _endTimeController.text : null,
+        location: _locationController.text.isNotEmpty ? _locationController.text : null,
+        placeLat: _currentPosition != null ? _currentPosition.latitude : null,
+        placeLng: _currentPosition != null ? _currentPosition.longitude : null,
         // 添加更多属性...
-      };
-
-      // 如果有额外的可选属性，根据是否有值决定是否添加到newItem中
-      // 例如：if (time != null) newItem['time'] = time.format(context);
-
-      itemsList.add(json.encode(newItem));
-      await prefs.setStringList(itemsKey, itemsList);
-      if (widget.planItem == null){
+      );
+      String itemJson = json.encode(newItem.toJson());
+      if (widget.planItem != null){
+        // 修改现有计划
+        final index = itemsList.indexWhere((planItem) =>
+        PlanItem.fromJson(json.decode(planItem)).id == widget.planItem!.id);
+        if (index != -1) {
+          itemsList[index] = itemJson;
+        }
+        await prefs.setStringList(itemsKey, itemsList);
+      }else{
+        itemsList.add(itemJson);
+        await prefs.setStringList(itemsKey, itemsList);
         Navigator.pop(context);
+        super.dispose();
       }
       Navigator.pop(context);
+      super.dispose();
     }
   }
 
