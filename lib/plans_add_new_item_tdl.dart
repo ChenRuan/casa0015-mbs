@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:uuid/uuid.dart';
 
 class ToDoListPage extends StatefulWidget {
   final String planId;
   final int day;
-
-  ToDoListPage({Key? key, required this.planId, required this.day}) : super(key: key);
+  final String? title;
+  final List<String>? tasks;
+  final List<String>? taskCompletionStatus;
+  final String? uid;
+  ToDoListPage({Key? key, required this.planId, required this.day, this.title, this.tasks, this.taskCompletionStatus, this.uid}) : super(key: key);
 
   @override
   _ToDoListPageState createState() => _ToDoListPageState();
@@ -16,12 +20,24 @@ class _ToDoListPageState extends State<ToDoListPage> {
   TextEditingController titleController = TextEditingController();
   List<TextEditingController> controllers = [];
   List<bool> taskStatus = [];
+  String? uid;
 
   @override
   void initState() {
     super.initState();
-    // Initialize with one task
-    addNewTask();
+    uid = widget.uid ?? Uuid().v4();
+    if (widget.title != null) {
+      titleController.text = widget.title!;
+    }
+    if (widget.tasks != null && widget.taskCompletionStatus != null) {
+      for (int i = 0; i < widget.tasks!.length; i++) {
+        controllers.add(TextEditingController(text: widget.tasks![i]));
+        bool completed = widget.taskCompletionStatus![i].toString() == 'true';
+        taskStatus.add(completed);
+      }
+    } else {
+      addNewTask(); // Only add a new task if creating a new list
+    }
   }
 
   void addNewTask() {
@@ -66,22 +82,17 @@ class _ToDoListPageState extends State<ToDoListPage> {
 
   Future<void> saveTasks() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    String key = 'todo_${widget.planId}_${widget.day}';
+    String key = 'todo_${widget.planId}_${widget.day}_$uid';
     List<Map<String, dynamic>> taskData = [
-      {'title': titleController.text}
+      for (int i = 0; i < controllers.length; i++)
+        {
+          'task': controllers[i].text,
+          'completed': taskStatus[i]
+        }
     ];
 
-    for (int i = 0; i < controllers.length; i++) {
-      taskData.add({
-        'task': controllers[i].text,
-        'completed': taskStatus[i]
-      });
-    }
-
-    await prefs.setString(key, jsonEncode(taskData));
+    await prefs.setString(key, jsonEncode({'uid': uid, 'title': titleController.text, 'tasks': taskData}));
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('List saved!')));
-    Navigator.pop(context);
-    Navigator.pop(context);
   }
 
   @override

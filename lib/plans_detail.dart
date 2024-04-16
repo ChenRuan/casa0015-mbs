@@ -1,4 +1,5 @@
 import 'package:eztour/plans_add_new_item_forms.dart';
+import 'package:eztour/plans_add_new_item_tdl.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:eztour/plans_add_new_item.dart'; // 确保这个路径与你的项目结构匹配
@@ -29,18 +30,100 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     _loadPlanItems();
   }
 
+  Future<List<Map<String, dynamic>>> _loadToDoLists() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys().where((key) => key.startsWith('todo_${widget.plan.id}_$_currentDay')).toList();
+    List<Map<String, dynamic>> allLists = [];
+
+    for (String key in keys) {
+      String? savedData = prefs.getString(key);
+      if (savedData != null) {
+        try {
+          var decodedData = jsonDecode(savedData);
+          if (decodedData is Map) {
+            allLists.add({
+              'uid': decodedData['uid'],
+              'title': decodedData['title'],
+              'tasks': decodedData['tasks'],
+            });
+          } else {
+            print("Unexpected JSON format for key $key");
+          }
+        } catch (e) {
+          print("Error parsing ToDo list data for key $key: $e");
+        }
+      }
+    }
+    return allLists;
+  }
+
+
+
+  Widget _buildHorizontalToDoLists() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _loadToDoLists(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+            return SizedBox(
+              height: 80,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: snapshot.data!.length,
+                itemBuilder: (context, index) {
+                  var listData = snapshot.data![index];
+                  List<dynamic> tasks = listData['tasks'] as List<dynamic>;
+                  int completedCount = tasks.where((t) => t['completed'] as bool).length;
+                  bool allCompleted = completedCount == tasks.length;
+                  return InkWell(
+                    onTap: () {
+                      if (snapshot.data != null) {
+                        var listData = snapshot.data![index];
+                        List<String> tasks = listData['tasks'].map<String>((t) => t['task'].toString()).toList();
+                        List<String> taskCompletionStatus = listData['tasks'].map<String>((t) => t['completed'].toString()).toList();
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => ToDoListPage(
+                          planId: widget.plan.id,
+                          day: _currentDay,
+                          uid: listData['uid'],
+                          title: listData['title'],
+                          tasks: tasks,
+                          taskCompletionStatus: taskCompletionStatus,
+                        )));
+                      }
+                    },
+                    child: Card(
+                      child: Container(
+                        width: MediaQuery.of(context).size.width - 20, // Adjust width here based on your layout preferences
+                        child: ListTile(
+                          title: Text("To do list: ${listData['title']}"),
+                          subtitle: Text(
+                            allCompleted ? "All completed!" : "Already done: $completedCount/${tasks.length}",
+                            style: TextStyle(color: allCompleted ? Colors.green : Colors.red),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          } else {
+            return Center(child: Text("No ToDo Lists found for this day."));
+          }
+        }
+        return Center(child: CircularProgressIndicator());
+      },
+    );
+  }
+
+
+
   void _loadPlanItems() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String itemsKey = 'items_${widget.plan.id}';
     List<String>? itemsJson = prefs.getStringList(itemsKey);
-
     if (itemsJson != null) {
       List<PlanItem> items = itemsJson.map((itemJson) => PlanItem.fromJson(json.decode(itemJson))).toList();
-
-      // 假设PlanItem有一个DateTime属性来表示日期和时间，你可以根据它来排序
-      // 这里仅根据day属性进行排序，你可以根据实际情况调整
-      items.sort((a, b) => a.day.compareTo(b.day));
-
       setState(() {
         _planItems = items;
       });
@@ -114,6 +197,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       ),
       body: Column(
         children: [
+          _buildHorizontalToDoLists(),
           Expanded(
             child: ListView.builder(
               itemCount: _planItems.where((item) => item.day == _currentDay).length,
