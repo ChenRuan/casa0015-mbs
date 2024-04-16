@@ -78,7 +78,7 @@ class _PlansPageState extends State<PlansPage> {
                   MaterialPageRoute(
                     builder: (context) => PlanDetailPage(plan: plan),
                   ),
-                );
+                ).then((_) => _loadPlans());
               },
             ),
           );

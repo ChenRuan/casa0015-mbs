@@ -1,4 +1,5 @@
-import 'package:eztour/plans_add_item_form.dart';
+import 'package:eztour/plans_add_new_item_forms.dart';
+import 'package:eztour/plans_add_new_item_tdl.dart';
 import 'package:flutter/material.dart';
 
 class AddNewItemPage extends StatelessWidget {
@@ -10,8 +11,7 @@ class AddNewItemPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 这里是一个示例项目类型列表
-    final List<String> itemTypes = ['准备项目', '交通', '饮食', '休闲'];
+    final List<String> itemTypes = ['To Do List','Attractions', 'Transportation', 'Dining', 'Accommodation'];
 
     return Scaffold(
       appBar: AppBar(
@@ -23,13 +23,21 @@ class AddNewItemPage extends StatelessWidget {
           return ListTile(
             title: Text(itemTypes[index]),
             onTap: () {
-              // 点击后，导航到详细表单页面
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DetailFormPage(planId: planId, type: itemTypes[index], day: day),
-                ),
-              );
+              if (itemTypes[index] == 'To Do List') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ToDoListPage(planId: planId, day: day),
+                  ),
+                );
+              } else{
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailFormPage(planId: planId, type: itemTypes[index], day: day),
+                    ),
+                );
+              }
             },
           );
         },

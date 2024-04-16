@@ -86,10 +86,10 @@ class _DetailFormPageState extends State<DetailFormPage> {
         itemsList.add(itemJson);
         await prefs.setStringList(itemsKey, itemsList);
         Navigator.pop(context);
-        super.dispose();
       }
       Navigator.pop(context);
       super.dispose();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Item saved!')));
     }
   }
 
@@ -110,20 +110,23 @@ class _DetailFormPageState extends State<DetailFormPage> {
         child: ListView(
           padding: EdgeInsets.all(16.0),
           children: <Widget>[
-            Container(
-              height: 150.0,
-              child: GoogleMap(
-                onMapCreated: _onMapCreated,
-                initialCameraPosition: CameraPosition(
-                  target: _initialPosition,
-                  zoom: 10.0,
-                ),
-                markers: {
-                  Marker(
-                    markerId: MarkerId("currentLocation"),
-                    position: _currentPosition,
+            Visibility(
+              visible: widget.type!='To Do List',
+              child: Container(
+                height: 150.0,
+                child: GoogleMap(
+                  onMapCreated: _onMapCreated,
+                  initialCameraPosition: CameraPosition(
+                    target: _initialPosition,
+                    zoom: 10.0,
                   ),
-                },
+                  markers: {
+                    Marker(
+                      markerId: MarkerId("currentLocation"),
+                      position: _currentPosition,
+                    ),
+                  },
+                ),
               ),
             ),
             TextFormField(
@@ -136,7 +139,10 @@ class _DetailFormPageState extends State<DetailFormPage> {
                 return null;
               },
             ),
-            placesAutoCompleteTextField(),
+            Visibility(
+                visible: widget.type!='To Do List',
+                child: placesAutoCompleteTextField()
+            ),
             Row(
               children: <Widget>[
                 Expanded(
@@ -189,7 +195,7 @@ class _DetailFormPageState extends State<DetailFormPage> {
         textEditingController: _locationController,
         googleAPIKey: "AIzaSyDYNlNZuGDeZat8C1x8nfNgC8mVQM7ELBE",
         inputDecoration: InputDecoration(
-          labelText: "Location", // 与Title表单字段样式保持一致
+          labelText: "Location",
         ),
         boxDecoration: NewBoxDecoration(),
         debounceTime: 500,
