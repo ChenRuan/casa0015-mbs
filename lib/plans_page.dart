@@ -2,6 +2,7 @@ import 'package:eztour/data.dart';
 import 'package:eztour/plans_add_new_plan.dart';
 import 'package:eztour/plans_detail.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -11,7 +12,7 @@ class PlansPage extends StatefulWidget {
 }
 
 class _PlansPageState extends State<PlansPage> {
-  List<Plan> _plans = [];
+  List<dynamic> _items = [];
 
   @override
   void initState() {
@@ -19,21 +20,38 @@ class _PlansPageState extends State<PlansPage> {
     _loadPlans();
   }
 
-  Future<void> _loadPlans() async {
+  void _loadPlans() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String>? savedPlansString = prefs.getStringList('plans');
-    try {
-      if (savedPlansString != null) {
-        setState(() {
-          _plans = savedPlansString.map((planString) => Plan.fromJson(json.decode(planString))).toList();
-        });
+    if (savedPlansString != null) {
+      List<Plan> loadedPlans = savedPlansString.map((planString) => Plan.fromJson(json.decode(planString))).toList();
+
+      DateTime today = DateTime.now();
+      List<Plan> ongoingPlans = loadedPlans.where((plan) => plan.startDate.isBefore(today) && plan.endDate.isAfter(today)).toList();
+      List<Plan> futurePlans = loadedPlans.where((plan) => plan.startDate.isAfter(today)).toList();
+      List<Plan> pastPlans = loadedPlans.where((plan) => plan.endDate.isBefore(today)).toList();
+
+      ongoingPlans.sort((a, b) => a.startDate.compareTo(b.startDate));
+      futurePlans.sort((a, b) => a.startDate.compareTo(b.startDate));
+      pastPlans.sort((a, b) => b.startDate.compareTo(a.startDate));
+
+      List<dynamic> tempList = [];
+      tempList.addAll(ongoingPlans);
+      if (futurePlans.isNotEmpty) {
+        tempList.add("—————— Future Plans ——————");
+        tempList.addAll(futurePlans);
       }
-    } catch (e) {
-      // 如果发生错误，例如json解析错误，可以在这里处理
-      debugPrint('Error loading plans: $e');
-      // 可能需要一个状态或弹出提示用户数据加载失败
+      if (pastPlans.isNotEmpty) {
+        tempList.add("—————— History Plans ——————");
+        tempList.addAll(pastPlans);
+      }
+
+      setState(() {
+        _items = tempList;
+      });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -47,78 +65,93 @@ class _PlansPageState extends State<PlansPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => AddNewPlanPage()),
-              ).then((_) => _loadPlans()); // Reload plans when a new one is added
+              ).then((_) => _loadPlans());
             },
           ),
         ],
       ),
       body: ListView.builder(
-        itemCount: _plans.length,
+        itemCount: _items.length,
         itemBuilder: (context, index) {
-          final plan = _plans[index];
-          return Card(
-            child: ListTile(
-              title: Text(plan.name),
-              subtitle: Text('Start Time: ${plan.startDate.toLocal().toString().split(' ')[0]}'),
-              trailing: PopupMenuButton<String>(
-                onSelected: (value) => _handleMenuSelection(value, index),
-                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                  PopupMenuItem<String>(
-                    value: 'edit',
-                    child: Text('Edit'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'delete',
-                    child: Text('Delete', style: TextStyle(color: Colors.red)),
-                  ),
-                ],
+          final item = _items[index];
+          if (item is String) { // Check if it is a header
+            return Container(
+              padding: EdgeInsets.symmetric(vertical: 3, horizontal: 10),  // Adjust vertical and horizontal padding
+              child: Text(
+                _items[index],
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: Colors.grey,  // Set text color
+                    fontSize: 12,  // Set font size
+                    fontWeight: FontWeight.bold  // Set font weight
+                ),
               ),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => PlanDetailPage(plan: plan),
-                  ),
-                ).then((_) => _loadPlans());
-              },
-            ),
-          );
+            );
+          } else if (item is Plan) { // Check if it is a Plan
+            final plan = _items[index] as Plan;
+            bool isOngoing = DateTime.now().isAfter(plan.startDate) && DateTime.now().isBefore(plan.endDate);
+            return Card(
+              color: isOngoing ? Colors.orange[100] : null,
+              child: ListTile(
+                title: Text(item.name),
+                subtitle: Text('Date: ${DateFormat('yyyy-MM-dd').format(item.startDate)} - ${DateFormat('yyyy-MM-dd').format(item.endDate)}'),
+                trailing: PopupMenuButton<String>(
+                  onSelected: (value) => _handleMenuSelection(value, item),
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                    PopupMenuItem<String>(
+                      value: 'edit',
+                      child: Text('Edit'),
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Text('Delete', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => PlanDetailPage(plan: item),
+                    ),
+                  ).then((_) => _loadPlans());
+                },
+              ),
+            );
+          }
+          return SizedBox.shrink(); // Just in case there's an unexpected item type
         },
       ),
     );
   }
-  // Handle menu selection
-  void _handleMenuSelection(String value, int index) {
+
+  void _handleMenuSelection(String value, Plan plan) {
     switch (value) {
       case 'edit':
-        _editPlan(index);
+        _editPlan(plan);
         break;
       case 'delete':
-        _deletePlan(index);
+        _deletePlan(plan);
         break;
       default:
         break;
     }
   }
 
-  // Edit plan logic
-  void _editPlan(int index) {
+  void _editPlan(Plan plan) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => AddNewPlanPage(plan: _plans[index])),
+      MaterialPageRoute(builder: (context) => AddNewPlanPage(plan: plan)),
     ).then((_) => _loadPlans());
   }
 
-  // Delete plan logic
-  void _deletePlan(int index) async {
-    // Remove the plan from the list and update SharedPreferences
+  void _deletePlan(Plan plan) async {
     setState(() {
-      _plans.removeAt(index);
+      _items.remove(plan);
     });
     final prefs = await SharedPreferences.getInstance();
-    // Update the stored plans
     await prefs.setStringList(
       'plans',
-      _plans.map((plan) => json.encode(plan.toJson())).toList(),
+      _items.where((item) => item is Plan).map((plan) => json.encode((plan as Plan).toJson())).toList(),
     );
   }
 }

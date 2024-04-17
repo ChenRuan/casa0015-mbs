@@ -29,3 +29,8 @@ Include a section that gives intructions on how to install the app or run it in 
 ##  Contact Details
 
 Email: zczqrua@ucl.ac.uk / luigizero@163.com
+
+## Todo Improvements
+
+1. 修改plan时候可以给提示，可能会造成信息损失
+2. planDetailPage可以加地图

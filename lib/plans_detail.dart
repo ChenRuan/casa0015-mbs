@@ -19,14 +19,14 @@ class PlanDetailPage extends StatefulWidget {
 class _PlanDetailPageState extends State<PlanDetailPage> {
   late int _currentDay;
   late int _totalDays;
-  final double arrowButtonPadding = 16.0; // 你可以根据需要调整这个值
+  final double arrowButtonPadding = 16.0;
   List<PlanItem> _planItems = [];
 
   @override
   void initState() {
     super.initState();
-    _currentDay = 0; // 初始化为Day 0
-    _totalDays = widget.plan.travelDays; // 不再额外加1，以匹配天数
+    _currentDay = 1;
+    _totalDays = widget.plan.travelDays;
     _loadPlanItems();
     print(widget.plan.id);
   }
