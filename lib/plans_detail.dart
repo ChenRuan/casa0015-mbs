@@ -2,8 +2,8 @@ import 'package:eztour/plans_add_new_item_forms.dart';
 import 'package:eztour/plans_add_new_item_tdl.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:eztour/plans_add_new_item.dart'; // 确保这个路径与你的项目结构匹配
-import 'package:eztour/data.dart'; // 假设这里定义了你的 Plan 类和其他相关数据结构
+import 'package:eztour/plans_add_new_item.dart';
+import 'package:eztour/data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -19,20 +19,24 @@ class PlanDetailPage extends StatefulWidget {
 class _PlanDetailPageState extends State<PlanDetailPage> {
   late int _currentDay;
   late int _totalDays;
-  final double arrowButtonPadding = 16.0;  // 你可以根据需要调整这个值
+  final double arrowButtonPadding = 16.0; // 你可以根据需要调整这个值
   List<PlanItem> _planItems = [];
 
   @override
   void initState() {
     super.initState();
-    _currentDay = 0;  // 初始化为Day 0
+    _currentDay = 0; // 初始化为Day 0
     _totalDays = widget.plan.travelDays; // 不再额外加1，以匹配天数
     _loadPlanItems();
+    print(widget.plan.id);
   }
 
   Future<List<Map<String, dynamic>>> _loadToDoLists() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final keys = prefs.getKeys().where((key) => key.startsWith('todo_${widget.plan.id}_$_currentDay')).toList();
+    final keys = prefs
+        .getKeys()
+        .where((key) => key.startsWith('todo_${widget.plan.id}_$_currentDay'))
+        .toList();
     List<Map<String, dynamic>> allLists = [];
 
     for (String key in keys) {
@@ -57,8 +61,6 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     return allLists;
   }
 
-
-
   Widget _buildHorizontalToDoLists() {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _loadToDoLists(),
@@ -73,32 +75,46 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                 itemBuilder: (context, index) {
                   var listData = snapshot.data![index];
                   List<dynamic> tasks = listData['tasks'] as List<dynamic>;
-                  int completedCount = tasks.where((t) => t['completed'] as bool).length;
+                  int completedCount =
+                      tasks.where((t) => t['completed'] as bool).length;
                   bool allCompleted = completedCount == tasks.length;
                   return InkWell(
                     onTap: () {
                       if (snapshot.data != null) {
                         var listData = snapshot.data![index];
-                        List<String> tasks = listData['tasks'].map<String>((t) => t['task'].toString()).toList();
-                        List<String> taskCompletionStatus = listData['tasks'].map<String>((t) => t['completed'].toString()).toList();
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => ToDoListPage(
-                          planId: widget.plan.id,
-                          day: _currentDay,
-                          uid: listData['uid'],
-                          title: listData['title'],
-                          tasks: tasks,
-                          taskCompletionStatus: taskCompletionStatus,
-                        )));
+                        List<String> tasks = listData['tasks']
+                            .map<String>((t) => t['task'].toString())
+                            .toList();
+                        List<String> taskCompletionStatus = listData['tasks']
+                            .map<String>((t) => t['completed'].toString())
+                            .toList();
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ToDoListPage(
+                                      planId: widget.plan.id,
+                                      day: _currentDay,
+                                      uid: listData['uid'],
+                                      title: listData['title'],
+                                      tasks: tasks,
+                                      taskCompletionStatus:
+                                          taskCompletionStatus,
+                                    ))).then((_) => _loadPlanItems());
                       }
                     },
                     child: Card(
                       child: Container(
-                        width: MediaQuery.of(context).size.width - 20, // Adjust width here based on your layout preferences
+                        width: MediaQuery.of(context).size.width -
+                            20, // Adjust width here based on your layout preferences
                         child: ListTile(
                           title: Text("${listData['title']} (To Do List)"),
                           subtitle: Text(
-                            allCompleted ? "All completed!" : "Already done: $completedCount/${tasks.length}",
-                            style: TextStyle(color: allCompleted ? Colors.green : Colors.red),
+                            allCompleted
+                                ? "All completed!"
+                                : "Already done: $completedCount/${tasks.length}",
+                            style: TextStyle(
+                                color:
+                                    allCompleted ? Colors.green : Colors.red),
                           ),
                         ),
                       ),
@@ -116,16 +132,42 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     );
   }
 
+  String _getCurrentDate() {
+    if (_currentDay >= 0) {
+      DateTime startDate = widget.plan.startDate;
+      DateTime currentDate = startDate.add(Duration(days: _currentDay -1));
+      print(currentDate);
+      return DateFormat('MMMM dd, yyyy')
+          .format(currentDate); // format the date as needed
+    }
+    return '';
+  }
+
   void _loadPlanItems() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String itemsKey = 'items_${widget.plan.id}';
     List<String>? itemsJson = prefs.getStringList(itemsKey);
     if (itemsJson != null) {
-      List<PlanItem> items = itemsJson.map((itemJson) => PlanItem.fromJson(json.decode(itemJson))).toList();
+      List<PlanItem> items = itemsJson
+          .map((itemJson) => PlanItem.fromJson(json.decode(itemJson)))
+          .toList();
+
+      items.sort((a, b) {
+        int startCompare = _compareTime(a.startTime, b.startTime);
+        if (startCompare != 0) return startCompare;
+        return _compareTime(a.endTime, b.endTime);
+      });
+
       setState(() {
         _planItems = items;
       });
     }
+  }
+
+  int _compareTime(String? a, String? b) {
+    if (a == null || a.isEmpty) return (b == null || b.isEmpty) ? 0 : 1;
+    if (b == null || b.isEmpty) return -1;
+    return a.compareTo(b);
   }
 
   void _goToNextDay() {
@@ -149,7 +191,12 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     if (index != -1) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => DetailFormPage(planItem: _planItems[index],planId: _planItems[index].planId,type: _planItems[index].type ,day: _planItems[index].day)),
+        MaterialPageRoute(
+            builder: (context) => DetailFormPage(
+                planItem: _planItems[index],
+                planId: _planItems[index].planId,
+                type: _planItems[index].type,
+                day: _planItems[index].day)),
       ).then((_) => _loadPlanItems());
     }
   }
@@ -176,40 +223,44 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     String? location,
     String? destination,
   }) {
-    // Build the time string if times are provided
     String timeText = '';
     if (startTime != '' || endTime != '') {
       if (startTime != '' && endTime != '') {
         timeText = '$startTime - $endTime';
       } else if (startTime != '') {
-        timeText = startTime??'';
-      } else{
+        timeText = startTime ?? '';
+      } else {
         timeText = 'endTime: $endTime';
       }
     }
 
-    // Build the location string if locations are provided
+    String extractPlaceName(String? place) {
+      if (place == null) return '';
+      var parts = place.split(RegExp(r'[,|-]'));
+      return parts[0]
+          .trim(); // Trim to remove any leading/trailing white spaces
+    }
+
     String locationText = '';
     if (location != "" || destination != "") {
       if (location != "" && destination != "") {
-        locationText = '${location?.split(',')[0]} - ${destination?.split(',')[0]}';
-      } else if (location!= "") {
-        locationText = location?.split(',')[0]??'';
+        locationText =
+            '${extractPlaceName(location)} - ${extractPlaceName(destination)}';
+      } else if (location != "") {
+        locationText = extractPlaceName(location);
       } else {
-        locationText = 'Destination: ${destination?.split(',')[0]}';
+        locationText = 'Destination: ${extractPlaceName(destination)}';
       }
     }
 
-    // Combine time and location strings with appropriate formatting
     if (timeText.isNotEmpty && locationText.isNotEmpty) {
-      return '$timeText, $locationText';
+      return '$timeText\n$locationText';
     } else if (timeText.isNotEmpty) {
       return timeText;
     } else if (locationText.isNotEmpty) {
       return locationText;
     }
 
-    // If everything is empty, return an empty string
     return '';
   }
 
@@ -217,18 +268,19 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.plan.name),
+        title: Text('Plan: ${widget.plan.name}'),
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.add),
             onPressed: () async {
               final result = await Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => AddNewItemPage(planId: widget.plan.id, day: _currentDay,)), // 确保这里正确传递planId
-              );
-              if (result != null) {
-                _loadPlanItems();
-              }
+                MaterialPageRoute(
+                    builder: (context) => AddNewItemPage(
+                          planId: widget.plan.id,
+                          day: _currentDay,
+                        )), // 确保这里正确传递planId
+              ).then((_) => _loadPlanItems());
             },
           ),
         ],
@@ -238,9 +290,12 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
           _buildHorizontalToDoLists(),
           Expanded(
             child: ListView.builder(
-              itemCount: _planItems.where((item) => item.day == _currentDay).length,
+              itemCount:
+                  _planItems.where((item) => item.day == _currentDay).length,
               itemBuilder: (context, index) {
-                final filteredItems = _planItems.where((item) => item.day == _currentDay).toList();
+                final filteredItems = _planItems
+                    .where((item) => item.day == _currentDay)
+                    .toList();
                 final item = filteredItems[index];
                 return Card(
                   child: ListTile(
@@ -259,14 +314,16 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                           _deleteItem(item.id);
                         }
                       },
-                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                      itemBuilder: (BuildContext context) =>
+                          <PopupMenuEntry<String>>[
                         const PopupMenuItem<String>(
                           value: 'modify',
                           child: Text('Modify'),
                         ),
                         const PopupMenuItem<String>(
                           value: 'delete',
-                          child: Text('Delete', style: TextStyle(color: Colors.red)),
+                          child: Text('Delete',
+                              style: TextStyle(color: Colors.red)),
                         ),
                       ],
                     ),
@@ -279,7 +336,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       ),
       bottomNavigationBar: BottomAppBar(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          padding: const EdgeInsets.symmetric(vertical: 3.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
@@ -290,8 +347,14 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                   onPressed: _currentDay > 0 ? _goToPreviousDay : null,
                 ),
               ),
-              Text('Day $_currentDay/${_totalDays}',
-                  style: Theme.of(context).textTheme.titleLarge),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Day $_currentDay/${_totalDays}',
+                      style: Theme.of(context).textTheme.titleLarge),
+                  Text(_getCurrentDate()) // Displaying the date here
+                ],
+              ),
               Padding(
                 padding: EdgeInsets.only(right: arrowButtonPadding),
                 child: IconButton(

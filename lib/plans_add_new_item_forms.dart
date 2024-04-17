@@ -56,13 +56,26 @@ class _DetailFormPageState extends State<DetailFormPage> {
       if (widget.planItem!.placeLat != null && widget.planItem!.placeLng != null) {
         _currentPosition = LatLng(widget.planItem!.placeLat!, widget.planItem!.placeLng!);
       }
+      if (widget.planItem!.destinationLat != null && widget.planItem!.destinationLng != null) {
+        _destinationPosition = LatLng(widget.planItem!.destinationLat!, widget.planItem!.destinationLng!);
+      }
       _notesController.text = widget.planItem!.notes ?? '';
+    }
+  }
+
+  void _loadAndDrawRoute() {
+    if (_currentPosition != null && _destinationPosition != null) {
+      _updateMarkers();
+      _drawRoute(mapController, _currentPosition, _destinationPosition!);
     }
   }
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
     _updateMapLocation();
+    if (_currentPosition != null && _destinationPosition != null) {
+      _loadAndDrawRoute();
+    }
   }
 
   void _updateMapLocation() {

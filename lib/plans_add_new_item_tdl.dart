@@ -93,6 +93,8 @@ class _ToDoListPageState extends State<ToDoListPage> {
 
     await prefs.setString(key, jsonEncode({'uid': uid, 'title': titleController.text, 'tasks': taskData}));
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('List saved!')));
+    Navigator.pop(context);
+    Navigator.pop(context);
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 class AddNewPlanPage extends StatefulWidget {
   final Plan? plan;
@@ -39,6 +40,7 @@ class _AddPlanPageState extends State<AddNewPlanPage> {
       int travelDays = int.tryParse(_travelDaysController.text) ?? 0;
 
       Plan newPlan = Plan(
+        id: widget.plan?.id ?? Uuid().v4(),
         name: _nameController.text,
         startDate: DateTime.parse(_startDateController.text),
         endDate: DateTime.parse(_endDateController.text),
@@ -62,7 +64,7 @@ class _AddPlanPageState extends State<AddNewPlanPage> {
 
       // 保存新计划列表
       await prefs.setStringList('plans', plansList);
-
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Plan saved!')));
       // 返回上一页面
       Navigator.pop(context);
     }
@@ -95,24 +97,25 @@ class _AddPlanPageState extends State<AddNewPlanPage> {
   }
 
   void _updateDatesAndDays({bool updateDays = false}) {
-    final startDate = DateTime.tryParse(_startDateController.text);
+    final DateTime? startDate = DateTime.tryParse(_startDateController.text);
     if (startDate != null) {
       if (updateDays) {
-        // 用户更改了旅行天数
+        // User changed the travel days
         int days = int.tryParse(_travelDaysController.text) ?? 0;
         _endDateController.text = DateFormat('yyyy-MM-dd').format(
-            startDate.add(Duration(days: days))
+            startDate.add(Duration(days: days - 1)) // Adjust for inclusive counting
         );
       } else {
-        // 用户更改了日期
-        final endDate = DateTime.tryParse(_endDateController.text);
+        // User changed the date
+        final DateTime? endDate = DateTime.tryParse(_endDateController.text);
         if (endDate != null) {
-          int days = endDate.difference(startDate).inDays;
+          int days = endDate.difference(startDate).inDays + 1; // +1 to include both start and end days in the count
           _travelDaysController.text = days.toString();
         }
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
