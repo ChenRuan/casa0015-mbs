@@ -95,7 +95,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                       child: Container(
                         width: MediaQuery.of(context).size.width - 20, // Adjust width here based on your layout preferences
                         child: ListTile(
-                          title: Text("To do list: ${listData['title']}"),
+                          title: Text("${listData['title']} (To Do List)"),
                           subtitle: Text(
                             allCompleted ? "All completed!" : "Already done: $completedCount/${tasks.length}",
                             style: TextStyle(color: allCompleted ? Colors.green : Colors.red),
@@ -108,15 +108,13 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
               ),
             );
           } else {
-            return Center(child: Text("No ToDo Lists found for this day."));
+            return SizedBox.shrink();
           }
         }
         return Center(child: CircularProgressIndicator());
       },
     );
   }
-
-
 
   void _loadPlanItems() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -146,8 +144,6 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     }
   }
 
-
-// 修改Item逻辑
   void _editItem(String itemId) {
     final index = _planItems.indexWhere((item) => item.id == itemId);
     if (index != -1) {
@@ -158,7 +154,6 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     }
   }
 
-// 删除Item逻辑
   void _deleteItem(String itemId) async {
     final index = _planItems.indexWhere((item) => item.id == itemId);
     if (index != -1) {
@@ -173,6 +168,49 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         _planItems.map((item) => json.encode(item.toJson())).toList(),
       );
     }
+  }
+
+  String _formatSubtitle({
+    String? startTime,
+    String? endTime,
+    String? location,
+    String? destination,
+  }) {
+    // Build the time string if times are provided
+    String timeText = '';
+    if (startTime != '' || endTime != '') {
+      if (startTime != '' && endTime != '') {
+        timeText = '$startTime - $endTime';
+      } else if (startTime != '') {
+        timeText = startTime??'';
+      } else{
+        timeText = 'endTime: $endTime';
+      }
+    }
+
+    // Build the location string if locations are provided
+    String locationText = '';
+    if (location != "" || destination != "") {
+      if (location != "" && destination != "") {
+        locationText = '${location?.split(',')[0]} - ${destination?.split(',')[0]}';
+      } else if (location!= "") {
+        locationText = location?.split(',')[0]??'';
+      } else {
+        locationText = 'Destination: ${destination?.split(',')[0]}';
+      }
+    }
+
+    // Combine time and location strings with appropriate formatting
+    if (timeText.isNotEmpty && locationText.isNotEmpty) {
+      return '$timeText, $locationText';
+    } else if (timeText.isNotEmpty) {
+      return timeText;
+    } else if (locationText.isNotEmpty) {
+      return locationText;
+    }
+
+    // If everything is empty, return an empty string
+    return '';
   }
 
   @override
@@ -206,8 +244,13 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                 final item = filteredItems[index];
                 return Card(
                   child: ListTile(
-                    title: Text(item.title),
-                    subtitle: Text((item.startTime??'1')+'2'), // Customize with item details
+                    title: Text('${item.title} (${item.type})'),
+                    subtitle: Text(_formatSubtitle(
+                      startTime: item.startTime,
+                      endTime: item.endTime,
+                      location: item.location,
+                      destination: item.destination,
+                    )), // Customize with item details
                     trailing: PopupMenuButton<String>(
                       onSelected: (String result) {
                         if (result == 'modify') {

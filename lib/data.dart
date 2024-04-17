@@ -50,9 +50,11 @@ class PlanItem {
   String? location;
   double? placeLat;
   double? placeLng;
-  String? locationDes;
+  String? destination;
   double? placeDesLat;
   double? placeDesLng;
+  double? destinationLat;
+  double? destinationLng;
   String? notes;
 
   PlanItem({
@@ -66,9 +68,11 @@ class PlanItem {
     this.location,
     this.placeLat,
     this.placeLng,
-    this.locationDes,
+    this.destination,
     this.placeDesLat,
     this.placeDesLng,
+    this.destinationLat,
+    this.destinationLng,
     this.notes,
   });
 
@@ -83,9 +87,11 @@ class PlanItem {
     'location': location,
     'placeLat': placeLat,
     'placeLng': placeLng,
-    'locationDes': locationDes,
+    'destination': destination,
     'placeLatDes': placeDesLat,
     'placeLngDes': placeDesLng,
+    'destinationLat': destinationLat,
+    'destinationLng': destinationLng,
     'notes': notes,
   };
 
@@ -100,9 +106,11 @@ class PlanItem {
     location: json['location'] as String? ?? '',
     placeLat: json['placeLat'] as double? ?? 0.0,
     placeLng: json['placeLng'] as double? ?? 0.0,
-    locationDes: json['locationDes'] as String? ?? '',
+    destination: json['destination'] as String? ?? '',
     placeDesLat: json['placeDesLat'] as double? ?? 0.0,
     placeDesLng: json['placeDesLng'] as double? ?? 0.0,
+      destinationLat: json['destinationLat'] as double? ?? 0.0,
+      destinationLng: json['destinationLng'] as double? ?? 0.0,
     notes: json['notes'] as String? ?? ''
   );
 }

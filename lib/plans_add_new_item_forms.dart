@@ -1,4 +1,5 @@
 import 'package:eztour/data.dart';
+import 'package:eztour/google_api_secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_flutter/google_places_flutter.dart';
@@ -6,6 +7,7 @@ import 'package:google_places_flutter/model/prediction.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
+import 'package:http/http.dart' as http;
 
 class DetailFormPage extends StatefulWidget {
   final String planId;
@@ -24,12 +26,23 @@ class _DetailFormPageState extends State<DetailFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _locationController = TextEditingController();
+  final _destinationController = TextEditingController();
   final _startTimeController = TextEditingController();
   final _endTimeController = TextEditingController();
   final _notesController = TextEditingController();
   late GoogleMapController mapController;
-  final LatLng _initialPosition = LatLng(-34.397, 150.644);
-  LatLng _currentPosition = LatLng(-34.397, 150.644);
+  LatLng _currentPosition = LatLng(51.5382687,-0.0123281);
+  LatLng? _destinationPosition;
+  Set<Marker> _markers = {};
+  Set<Polyline> _polylines = {};
+  final FocusNode _locationFocusNode = FocusNode();
+  final FocusNode _destinationFocusNode = FocusNode();
+
+  @override
+  void dispose() {
+    mapController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -39,6 +52,7 @@ class _DetailFormPageState extends State<DetailFormPage> {
       _startTimeController.text = widget.planItem!.startTime ?? '';
       _endTimeController.text = widget.planItem!.endTime ?? '';
       _locationController.text = widget.planItem!.location ?? '';
+      _destinationController.text = widget.planItem!.destination ?? '';
       if (widget.planItem!.placeLat != null && widget.planItem!.placeLng != null) {
         _currentPosition = LatLng(widget.planItem!.placeLat!, widget.planItem!.placeLng!);
       }
@@ -48,7 +62,118 @@ class _DetailFormPageState extends State<DetailFormPage> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
+    _updateMapLocation();
   }
+
+  void _updateMapLocation() {
+    print('enter update function');
+    _updateMarkers();
+    if (_currentPosition != null && _destinationPosition == null) {
+      mapController.animateCamera(CameraUpdate.newLatLng(_currentPosition!));
+    }else if(_currentPosition == null && _destinationPosition != null){
+      mapController.animateCamera(CameraUpdate.newLatLng(_destinationPosition!));
+    }else if(_currentPosition != null && _destinationPosition != null){
+      print('drawing...');
+      _drawRoute(mapController,_currentPosition,_destinationPosition!);
+      print('draw succeed');
+    }
+  }
+
+  void manualUpdate() {
+    setState(() {
+      _currentPosition = LatLng(40.7128, -74.0060); // Example coordinates for New York
+      _destinationPosition = LatLng(34.0522, -118.2437); // Example coordinates for Los Angeles
+    });
+    _updateMapLocation();
+  }
+
+  void _updateMarkers() {
+    _markers.clear();  // Clear existing markers
+    // Add start location marker
+    if (_currentPosition != null) {
+      _markers.add(Marker(
+        markerId: MarkerId("start"),
+        position: _currentPosition,
+        infoWindow: InfoWindow(title: "Start", snippet: "Start Location"),
+      ));
+    }
+
+    // Add destination location marker
+    if (_destinationPosition != null) {
+      _markers.add(Marker(
+        markerId: MarkerId("destination"),
+        position: _destinationPosition!,
+        infoWindow: InfoWindow(title: "Destination", snippet: "Destination Location"),
+      ));
+    }
+  }
+
+  Future<void> _drawRoute(GoogleMapController mapController, LatLng start, LatLng destination) async {
+    String url = 'https://maps.googleapis.com/maps/api/directions/json?origin=${start.latitude},${start.longitude}&destination=${destination.latitude},${destination.longitude}&key=${Secrets.googleMapsApiKey}';
+    var response = await http.get(Uri.parse(url));
+    var json = jsonDecode(response.body);
+    print(json);
+
+    if (json['routes'] != null && json['routes'].isNotEmpty) {
+      var encodedPoly = json['routes'][0]['overview_polyline']['points'];
+      var points = _decodePoly(encodedPoly);
+      var line = Polyline(
+        polylineId: PolylineId('route'),
+        points: points,
+        color: Colors.blue,
+        width: 5,
+      );
+      setState(() {
+        _polylines.add(line);
+      });
+      LatLngBounds bounds = _bounds(points);
+      CameraUpdate update = CameraUpdate.newLatLngBounds(bounds, 30);
+      mapController.animateCamera(update);
+    }
+  }
+
+  List<LatLng> _decodePoly(String encoded) {
+    List<LatLng> points = [];
+    int index = 0, len = encoded.length;
+    int lat = 0, lng = 0;
+
+    while (index < len) {
+      int b, shift = 0, result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+
+      LatLng p = LatLng((lat / 1E5).toDouble(), (lng / 1E5).toDouble());
+      points.add(p);
+    }
+    return points;
+  }
+
+  LatLngBounds _bounds(List<LatLng> points) {
+    double? south, west, north, east;
+    for (LatLng point in points) {
+      if (south == null || point.latitude < south) south = point.latitude;
+      if (north == null || point.latitude > north) north = point.latitude;
+      if (west == null || point.longitude < west) west = point.longitude;
+      if (east == null || point.longitude > east) east = point.longitude;
+    }
+    return LatLngBounds(southwest: LatLng(south!, west!), northeast: LatLng(north!, east!));
+  }
+
 
   Future<void> _saveItem() async {
     if (_formKey.currentState!.validate()) {
@@ -60,18 +185,18 @@ class _DetailFormPageState extends State<DetailFormPage> {
       PlanItem newItem = PlanItem(
         id: widget.planItem != null ? widget.planItem!.id : uuid.v4(),
         planId: widget.planId,
-        day: widget.day, // 示例，根据实际逻辑设置
+        day: widget.day,
         type: widget.type,
         title: _titleController.text,
-
-        // 以下是条件性添加的属性
-
         startTime: _startTimeController.text.isNotEmpty ? _startTimeController.text : null,
         endTime: _endTimeController.text.isNotEmpty ? _endTimeController.text : null,
         location: _locationController.text.isNotEmpty ? _locationController.text : null,
-        placeLat: _currentPosition != null ? _currentPosition.latitude : null,
-        placeLng: _currentPosition != null ? _currentPosition.longitude : null,
-        // 添加更多属性...
+        destination: _destinationController.text.isNotEmpty ? _destinationController.text : null, // Save destination
+        placeLat: _currentPosition?.latitude,
+        placeLng: _currentPosition?.longitude,
+        destinationLat: _destinationPosition?.latitude,
+        destinationLng: _destinationPosition?.longitude,
+        notes: _notesController.text,
       );
       String itemJson = json.encode(newItem.toJson());
       if (widget.planItem != null){
@@ -87,9 +212,12 @@ class _DetailFormPageState extends State<DetailFormPage> {
         await prefs.setStringList(itemsKey, itemsList);
         Navigator.pop(context);
       }
-      Navigator.pop(context);
-      super.dispose();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Item saved!')));
+      Future.delayed(Duration(milliseconds: 300), () {
+        Navigator.pop(context);
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Item saved!')));
+      }
     }
   }
 
@@ -102,6 +230,7 @@ class _DetailFormPageState extends State<DetailFormPage> {
           IconButton(
             icon: Icon(Icons.check),
             onPressed: _saveItem,
+            //onPressed: manualUpdate,
           ),
         ],
       ),
@@ -117,15 +246,13 @@ class _DetailFormPageState extends State<DetailFormPage> {
                 child: GoogleMap(
                   onMapCreated: _onMapCreated,
                   initialCameraPosition: CameraPosition(
-                    target: _initialPosition,
+                    target: _currentPosition,
                     zoom: 10.0,
                   ),
-                  markers: {
-                    Marker(
-                      markerId: MarkerId("currentLocation"),
-                      position: _currentPosition,
-                    ),
-                  },
+                  markers: Set.from(_markers),  // Ensure you're using the correct Set of markers
+                  polylines: _polylines,  // Ensure this Set is being updated correctly
+                  mapType: MapType.normal,
+                  myLocationEnabled: true,
                 ),
               ),
             ),
@@ -139,9 +266,10 @@ class _DetailFormPageState extends State<DetailFormPage> {
                 return null;
               },
             ),
+            placesAutoCompleteTextField(widget.type,true),
             Visibility(
-                visible: widget.type!='To Do List',
-                child: placesAutoCompleteTextField()
+                visible: widget.type == 'Transportation',
+                child:placesAutoCompleteTextField(widget.type,false),
             ),
             Row(
               children: <Widget>[
@@ -169,10 +297,10 @@ class _DetailFormPageState extends State<DetailFormPage> {
                         initialTime: TimeOfDay.now(),
                       );
                       if (picked != null) {
-                        _endTimeController.text = picked.format(context); // 格式化并更新显示
+                        _endTimeController.text = picked.format(context);
                       }
                     },
-                    controller: _endTimeController, // 添加这行
+                    controller: _endTimeController,
                     decoration: InputDecoration(labelText: 'End Time'),
                   ),
                 ),
@@ -188,14 +316,15 @@ class _DetailFormPageState extends State<DetailFormPage> {
     );
   }
 
-  placesAutoCompleteTextField() {
+  placesAutoCompleteTextField(String type, bool? isStart) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 0),
       child: GooglePlaceAutoCompleteTextField(
-        textEditingController: _locationController,
-        googleAPIKey: "AIzaSyDYNlNZuGDeZat8C1x8nfNgC8mVQM7ELBE",
+        textEditingController: isStart! ? _locationController : _destinationController,
+        googleAPIKey: Secrets.googleMapsApiKey,
+        focusNode: isStart ? _locationFocusNode : _destinationFocusNode,
         inputDecoration: InputDecoration(
-          labelText: "Location",
+          labelText: widget.type == 'Transportation' ? (isStart! ? "Departure" : "Destination") : "Location",
         ),
         boxDecoration: NewBoxDecoration(),
         debounceTime: 500,
@@ -203,13 +332,25 @@ class _DetailFormPageState extends State<DetailFormPage> {
         isLatLngRequired: true,
         getPlaceDetailWithLatLng: (Prediction prediction) {
           setState(() {
-            _currentPosition = LatLng(double.parse(prediction.lat!), double.parse(prediction.lng!));
-            mapController.animateCamera(CameraUpdate.newLatLng(_currentPosition));
+            LatLng newPosition = LatLng(double.parse(prediction.lat!), double.parse(prediction.lng!));
+            if (isStart) {
+              _currentPosition = newPosition;
+            } else {
+              _destinationPosition = newPosition;
+            }
+            _updateMarkers();
+            if (_currentPosition != null && _destinationPosition != null) {
+              _drawRoute(mapController, _currentPosition, _destinationPosition!);
+            }
+            mapController.animateCamera(CameraUpdate.newLatLng(newPosition));
           });
         },
 
         itemClick: (Prediction prediction) {
-          _locationController.text = prediction.description ?? "";
+          TextEditingController controller = isStart ? _locationController : _destinationController;
+          controller.text = prediction.description ?? "";
+          FocusNode focusNode = isStart ? _locationFocusNode : _destinationFocusNode;
+          focusNode.unfocus();
         },
         seperatedBuilder: Divider(),
         containerHorizontalPadding: 0,
