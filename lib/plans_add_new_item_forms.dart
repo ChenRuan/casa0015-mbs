@@ -92,14 +92,6 @@ class _DetailFormPageState extends State<DetailFormPage> {
     }
   }
 
-  void manualUpdate() {
-    setState(() {
-      _currentPosition = LatLng(40.7128, -74.0060); // Example coordinates for New York
-      _destinationPosition = LatLng(34.0522, -118.2437); // Example coordinates for Los Angeles
-    });
-    _updateMapLocation();
-  }
-
   void _updateMarkers() {
     _markers.clear();  // Clear existing markers
     // Add start location marker

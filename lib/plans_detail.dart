@@ -21,6 +21,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   late int _totalDays;
   final double arrowButtonPadding = 16.0;
   List<PlanItem> _planItems = [];
+  List<Map<String, dynamic>> _todoLists = [];
 
   @override
   void initState() {
@@ -28,6 +29,11 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     _currentDay = 1;
     _totalDays = widget.plan.travelDays;
     _loadPlanItems();
+    _loadToDoLists().then((data) {
+      setState(() {
+        _todoLists = data;
+      });
+    });
     print(widget.plan.id);
   }
 
@@ -62,74 +68,56 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   }
 
   Widget _buildHorizontalToDoLists() {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _loadToDoLists(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-            return SizedBox(
-              height: 80,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: snapshot.data!.length,
-                itemBuilder: (context, index) {
-                  var listData = snapshot.data![index];
-                  List<dynamic> tasks = listData['tasks'] as List<dynamic>;
-                  int completedCount =
-                      tasks.where((t) => t['completed'] as bool).length;
-                  bool allCompleted = completedCount == tasks.length;
-                  return InkWell(
-                    onTap: () {
-                      if (snapshot.data != null) {
-                        var listData = snapshot.data![index];
-                        List<String> tasks = listData['tasks']
-                            .map<String>((t) => t['task'].toString())
-                            .toList();
-                        List<String> taskCompletionStatus = listData['tasks']
-                            .map<String>((t) => t['completed'].toString())
-                            .toList();
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => ToDoListPage(
-                                      planId: widget.plan.id,
-                                      day: _currentDay,
-                                      uid: listData['uid'],
-                                      title: listData['title'],
-                                      tasks: tasks,
-                                      taskCompletionStatus:
-                                          taskCompletionStatus,
-                                    ))).then((_) => _loadPlanItems());
-                      }
-                    },
-                    child: Card(
-                      child: Container(
-                        width: MediaQuery.of(context).size.width -
-                            20, // Adjust width here based on your layout preferences
-                        child: ListTile(
-                          title: Text("${listData['title']} (To Do List)"),
-                          subtitle: Text(
-                            allCompleted
-                                ? "All completed!"
-                                : "Already done: $completedCount/${tasks.length}",
-                            style: TextStyle(
-                                color:
-                                    allCompleted ? Colors.green : Colors.red),
-                          ),
-                        ),
-                      ),
+    // Directly build the list view if data is already loaded
+    if(_todoLists.isNotEmpty){
+      return SizedBox(
+        height: 80,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: _todoLists.length,
+          itemBuilder: (context, index) {
+            var listData = _todoLists[index];
+            List<dynamic> tasks = listData['tasks'] as List<dynamic>;
+            int completedCount = tasks.where((t) => t['completed'] as bool).length;
+            bool allCompleted = completedCount == tasks.length;
+            return InkWell(
+              onTap: () {
+                var listData = _todoLists[index];
+                List<String> tasks = listData['tasks'].map<String>((t) => t['task'].toString()).toList();
+                List<String> taskCompletionStatus = listData['tasks'].map<String>((t) => t['completed'].toString()).toList();
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ToDoListPage(
+                          planId: widget.plan.id,
+                          day: _currentDay,
+                          uid: listData['uid'],
+                          title: listData['title'],
+                          tasks: tasks,
+                          taskCompletionStatus: taskCompletionStatus,
+                        )
+                    )
+                );
+              },
+              child: Card(
+                child: Container(
+                  width: MediaQuery.of(context).size.width - 20,
+                  child: ListTile(
+                    title: Text("${listData['title']} (To Do List)"),
+                    subtitle: Text(
+                      allCompleted ? "All completed!" : "Already done: $completedCount/${tasks.length}",
+                      style: TextStyle(color: allCompleted ? Colors.green : Colors.red),
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
             );
-          } else {
-            return SizedBox.shrink();
-          }
-        }
-        return Center(child: CircularProgressIndicator());
-      },
-    );
+          },
+        ),
+      );
+    }else{
+      return SizedBox(height: 0,);
+    }
   }
 
   String _getCurrentDate() {
@@ -174,6 +162,11 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     if (_currentDay < _totalDays) {
       setState(() {
         _currentDay++;
+        _loadToDoLists().then((data) {
+          setState(() {
+            _todoLists = data;
+          });
+        });
       });
     }
   }
@@ -182,6 +175,11 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     if (_currentDay > 0) {
       setState(() {
         _currentDay--;
+        _loadToDoLists().then((data) {
+          setState(() {
+            _todoLists = data;
+          });
+        });
       });
     }
   }

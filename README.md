@@ -34,3 +34,10 @@ Email: zczqrua@ucl.ac.uk / luigizero@163.com
 
 1. 修改plan时候可以给提示，可能会造成信息损失
 2. planDetailPage可以加地图
+3. 如果上一次在某个travel中，则自动进入旅行模式
+4. 如果没有plan，给出提示
+5. 如果没有planItem，给出提示
+6. 地图定位到当前位置
+7. todolist增加删除功能
+8. travel detail定位到当天
+9. 控制api读取频率
