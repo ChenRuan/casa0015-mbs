@@ -27,9 +27,9 @@ class _PlansPageState extends State<PlansPage> {
       List<Plan> loadedPlans = savedPlansString.map((planString) => Plan.fromJson(json.decode(planString))).toList();
 
       DateTime today = DateTime.now();
-      List<Plan> ongoingPlans = loadedPlans.where((plan) => plan.startDate.isBefore(today) && plan.endDate.isAfter(today)).toList();
+      List<Plan> ongoingPlans = loadedPlans.where((plan) => plan.startDate.isBefore(today) && plan.endDate.isAfter(today.subtract(Duration(days: 1)))).toList();
       List<Plan> futurePlans = loadedPlans.where((plan) => plan.startDate.isAfter(today)).toList();
-      List<Plan> pastPlans = loadedPlans.where((plan) => plan.endDate.isBefore(today)).toList();
+      List<Plan> pastPlans = loadedPlans.where((plan) => plan.endDate.isBefore(today.subtract(Duration(days: 1)))).toList();
 
       ongoingPlans.sort((a, b) => a.startDate.compareTo(b.startDate));
       futurePlans.sort((a, b) => a.startDate.compareTo(b.startDate));
@@ -89,7 +89,7 @@ class _PlansPageState extends State<PlansPage> {
             );
           } else if (item is Plan) { // Check if it is a Plan
             final plan = _items[index] as Plan;
-            bool isOngoing = DateTime.now().isAfter(plan.startDate) && DateTime.now().isBefore(plan.endDate);
+            bool isOngoing = DateTime.now().isAfter(plan.startDate) && DateTime.now().subtract(Duration(days: 1)).isBefore(plan.endDate);
             return Card(
               color: isOngoing ? Colors.orange[100] : null,
               child: ListTile(
@@ -155,3 +155,4 @@ class _PlansPageState extends State<PlansPage> {
     );
   }
 }
+

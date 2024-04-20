@@ -41,3 +41,5 @@ Email: zczqrua@ucl.ac.uk / luigizero@163.com
 7. todolist增加删除功能
 8. travel detail定位到当天
 9. 控制api读取频率
+10. 镜头没有挪过去
+11. 自动定位

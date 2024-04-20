@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math' show min,max;
 import 'package:eztour/plans_add_new_item_forms.dart';
 import 'package:eztour/plans_add_new_item_tdl.dart';
+import 'package:eztour/travel_weather_page.dart';
 import 'package:flutter/material.dart';
 import 'package:eztour/data.dart'; // Assuming PlanItem and other models are defined here
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -11,7 +12,6 @@ import 'package:location/location.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:eztour/get_location.dart';
-
 import 'google_api_secrets.dart';
 
 class TravelModePage extends StatefulWidget {
@@ -550,7 +550,12 @@ class _TravelModePageState extends State<TravelModePage> {
           IconButton(
             icon: Icon(Icons.wb_sunny),
             onPressed: () {
-
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => WeatherPage(planItems: _planItems
+                    .where((item) => item.day == _currentDay)
+                    .toList(), title: widget.plan.name)),
+              );
             },
           ),
         ],

@@ -27,7 +27,7 @@ class _TravelPageState extends State<TravelPage> {
       List<Plan> loadedPlans = savedPlansString.map((planString) => Plan.fromJson(json.decode(planString))).toList();
       setState(() {
         _plans = loadedPlans.where((plan) =>
-        today.isAfter(plan.startDate.subtract(Duration(days: 1))) && today.isBefore(plan.endDate)
+        today.isAfter(plan.startDate.subtract(Duration(days: 1))) && today.subtract(Duration(days: 1)).isBefore(plan.endDate)
         ).toList();
       });
     }
