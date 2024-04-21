@@ -41,5 +41,8 @@ Email: zczqrua@ucl.ac.uk / luigizero@163.com
 7. todolist增加删除功能
 8. travel detail定位到当天
 9. 控制api读取频率
-10. 镜头没有挪过去
+10. 镜头没有挪过去(只需要挪当天的就行)
 11. 自动定位
+12. 地图上名称显示错误
+13. 优化：多个相同地点存在时
+14. 

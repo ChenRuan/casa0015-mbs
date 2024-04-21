@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:eztour/google_api_secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -32,7 +34,7 @@ class _WeatherPageState extends State<WeatherPage> {
       DateTime itemStartTime = DateTime(now.year, now.month, now.day,
           int.parse(item.startTime!.split(':')[0]), int.parse(item.startTime!.split(':')[1]));
 
-      bool hasEndTime = item.endTime!.isNotEmpty;
+      bool hasEndTime = item.endTime != null && item.endTime!.isNotEmpty;
       DateTime itemEndTime = hasEndTime ? DateTime(now.year, now.month, now.day,
           int.parse(item.endTime!.split(':')[0]), int.parse(item.endTime!.split(':')[1])) : itemStartTime;
       print("now: ${now}, 1h ago:${oneHourAgo}, ItemStartTime:${item.startTime}, ItemEndTime:${item.endTime}");
@@ -43,10 +45,10 @@ class _WeatherPageState extends State<WeatherPage> {
 
     for (var item in relevantItems) {
       print(item.location!);
-      WeatherData weather = await fetchWeatherData(item.placeLat!, item.placeLng!, item.location!);
+      WeatherData weather = await fetchWeatherData(item.placeLat!, item.placeLng!, item, item.location!);
       fetchedWeatherData.add(weather);
-      if(item.destination != null){
-        WeatherData destinationWeather = await fetchWeatherData(item.destinationLat!, item.destinationLng!, item.destination!);
+      if(item.destination != null && item.destination!.isNotEmpty){
+        WeatherData destinationWeather = await fetchWeatherData(item.destinationLat!, item.destinationLng!, item, item.destination!);
         fetchedWeatherData.add(destinationWeather);
       }
     }
@@ -63,24 +65,48 @@ class _WeatherPageState extends State<WeatherPage> {
         .trim(); // Trim to remove any leading/trailing white spaces
   }
 
-  Future<WeatherData> fetchWeatherData(double lat, double lon, String Location) async {
+  Future<WeatherData> fetchWeatherData(double lat, double lon, PlanItem item, String locationName) async {
     String apiKey = Secrets.WeatherApiKey;
     String url = 'https://api.openweathermap.org/data/3.0/onecall?lat=$lat&lon=$lon&appid=$apiKey';
+    DateTime now = DateTime.now();
+    DateTime currentDate = DateTime(now.year, now.month, now.day);
+    DateTime? itemStartTime;
+    DateTime? itemEndTime;
+    if (item.startTime != null && item.startTime!.isNotEmpty) {
+      itemStartTime = currentDate.add(Duration(hours: _getHour(item.startTime), minutes: _getMinute(item.startTime)));
+    }
+
+    if (item.endTime != null && item.endTime!.isNotEmpty) {
+      itemEndTime = currentDate.add(Duration(hours: _getHour(item.endTime), minutes: _getMinute(item.endTime)));
+    }
     var response = await http.get(Uri.parse(url));
     var data = jsonDecode(response.body);
-    return WeatherData.fromJson(data, extractPlaceName(Location));
+    print('Fetched weather data for location: $locationName');
+    return WeatherData.fromJson(data, extractPlaceName(locationName) , _getHour(item.startTime) != 0 ? itemStartTime : null, _getHour(item.endTime) != 0 ? itemEndTime : null);
+  }
+
+  int _getHour(String? time) {
+    if (time == null || time!.isEmpty) return 0;
+    return int.parse(time.split(':')[0]);
+  }
+
+  int _getMinute(String? time) {
+    if (time == null || time!.isEmpty) return 0;
+    return int.parse(time.split(':')[1]);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Center(child: Column(
+        centerTitle: true,
+        title: Column(
+          mainAxisAlignment: MainAxisAlignment.center, // Center column content
           children: [
-            Text("Weather of today",style: TextStyle(fontSize: 20),)  ,
+            Text("Weather of today", style: TextStyle(fontSize: 20)),
             Text("plan: ${widget.title}", style: TextStyle(fontSize: 14))
           ],
-        )),
+        ),
       ),
       body: ListView.builder(
         itemCount: weatherData.length,
@@ -103,14 +129,23 @@ class WeatherCard extends StatefulWidget {
 
 class _WeatherCardState extends State<WeatherCard> {
   bool isExpanded = false;
+  late ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController(); // Initialize scroll controller here
+  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        setState(() {
-          isExpanded = !isExpanded;
-        });
+        if (widget.weather != null) { // Add null check here
+          setState(() {
+            isExpanded = !isExpanded;
+          });
+        }
       },
       child: AnimatedContainer(
         duration: Duration(milliseconds: 500),
@@ -118,7 +153,12 @@ class _WeatherCardState extends State<WeatherCard> {
         margin: EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.blue.shade200, Colors.blue.shade400],
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.5),
@@ -133,63 +173,115 @@ class _WeatherCardState extends State<WeatherCard> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${widget.weather.locationName}',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 3.0, color: Colors.white, offset: Offset(0.0, 0.0))]),
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${widget.weather.currentTemp.toStringAsFixed(0)}°C',
+                            style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 3.0, color: Colors.white, offset: Offset(0.0, 0.0))]),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '${widget.weather.locationName}',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            'Max Temp: ${widget.weather.maxTemp.toStringAsFixed(1)}°C',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            'Min Temp: ${widget.weather.minTemp.toStringAsFixed(1)}°C',
-                            style: TextStyle(fontSize: 18),
+                          Image.network(
+                            'http://openweathermap.org/img/wn/${widget.weather.daily.icon}@2x.png',
+                            width: 50,
                           ),
                         ],
                       ),
-                      Image.network(
-                        'http://openweathermap.org/img/wn/${widget.weather.daily.icon}@2x.png',
-                        width: 50,
+                      Text(
+                        '${widget.weather.minTemp.toStringAsFixed(0)}°C - ${widget.weather.maxTemp.toStringAsFixed(0)}°C',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 3.0, color: Colors.white, offset: Offset(0.0, 0.0))]),
+                        textAlign: TextAlign.right,
                       ),
                     ],
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    widget.weather.daily.description,
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                 ],
               ),
             ),
-            if (isExpanded) buildHourlyWeatherList(widget.weather.hourly),
+            if (isExpanded) buildHourlyWeatherList(widget.weather.hourly, widget.weather.itemStartTime,widget.weather.itemEndTime),
           ],
         ),
       ),
     );
   }
 
-  Widget buildHourlyWeatherList(List<WeatherHourly> hourlyData) {
+  Widget buildHourlyWeatherList(List<WeatherHourly> hourlyData, DateTime? planStartTime, DateTime? planEndTime) {
+    int displayCount = min(hourlyData.length, 24); // Limit to 24 hours
+    print('Plan start time: $planStartTime');
+    print('Plan end time: $planEndTime');
+    print('Current time: ${DateTime.now()}');
+    print('Checking for highlighted time range between $planStartTime and $planEndTime');
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      int? targetIndex;
+      if (planStartTime != null && planEndTime != null) {
+        targetIndex = max(0, hourlyData.indexWhere((hour) =>
+        hour.dateTime.isAfter(planStartTime.subtract(Duration(hours: 1))) &&
+            hour.dateTime.isBefore(planEndTime.add(Duration(hours: 1)))
+        ));
+      } else if (planStartTime != null) {
+        targetIndex = max(0, hourlyData.indexWhere((hour) =>
+            hour.dateTime.isAfter(planStartTime.subtract(Duration(hours: 1)))
+        ));
+      } else if (planEndTime != null) {
+        targetIndex = max(0, hourlyData.indexWhere((hour) =>
+            hour.dateTime.isBefore(planEndTime.add(Duration(hours: 1)))
+        ));
+      }
+      if (targetIndex != null && targetIndex != -1 && _scrollController.hasClients) {
+        _scrollController.animateTo((targetIndex * 60).toDouble(), // Assume each item is 100 pixels wide
+            duration: Duration(seconds: 1),
+            curve: Curves.easeInOut);
+        print('Scrolled to index: $targetIndex');
+      }
+    });
+
     return Container(
       height: 120,
       child: ListView.builder(
+        controller: _scrollController,
         scrollDirection: Axis.horizontal,
-        itemCount: hourlyData.length,
+        itemCount: displayCount,
         itemBuilder: (context, index) {
+          bool isHighlighted = false;
+          if (planStartTime != null && planEndTime != null) {
+            isHighlighted = hourlyData[index].dateTime.isAfter(planStartTime.subtract(Duration(hours: 1))) &&
+                hourlyData[index].dateTime.isBefore(planEndTime.add(Duration(hours: 1)));
+          } else if (planStartTime != null) {
+            isHighlighted = hourlyData[index].dateTime.isAfter(planStartTime.subtract(Duration(hours: 1))) &&
+                hourlyData[index].dateTime.isBefore(planStartTime.add(Duration(hours: 1)));
+          } else if (planEndTime != null) {
+            isHighlighted = hourlyData[index].dateTime.isAfter(planEndTime.subtract(Duration(hours: 1))) &&
+                hourlyData[index].dateTime.isBefore(planEndTime.add(Duration(hours: 1)));
+          }
           return Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(
               children: [
                 Text(
-                  "${DateFormat('jm').format(hourlyData[index].dateTime)}",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  "${DateFormat('HH:mm').format(hourlyData[index].dateTime)}", // Shows day and time
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isHighlighted ? Colors.red : Colors.black, // Highlight if in the plan range
+                  ),
                 ),
                 Image.network(
                   'http://openweathermap.org/img/wn/${hourlyData[index].icon}.png',
@@ -207,29 +299,42 @@ class _WeatherCardState extends State<WeatherCard> {
 
 class WeatherData {
   String locationName;
+  double currentTemp;
   double minTemp;
   double maxTemp;
+  DateTime? itemStartTime;
+  DateTime? itemEndTime;
+  int timezoneOffset;
   List<WeatherHourly> hourly;
   WeatherDaily daily;
 
   WeatherData({
     required this.locationName,
+    required this.currentTemp,
     required this.minTemp,
     required this.maxTemp,
+    this.itemStartTime,
+    this.itemEndTime,
+    required this.timezoneOffset,
     required this.hourly,
     required this.daily,
   });
 
-  factory WeatherData.fromJson(Map<String, dynamic> json, String location) {
+  factory WeatherData.fromJson(Map<String, dynamic> json, String location, DateTime? itemStartTime, DateTime? itemEndTime) {
     List<WeatherHourly> hourlyWeather = [];
+    int timezoneOffset = json['timezone_offset'];
     for (var entry in json['hourly']) {
-      hourlyWeather.add(WeatherHourly.fromJson(entry));
+      hourlyWeather.add(WeatherHourly.fromJson(entry,timezoneOffset));
     }
 
     return WeatherData(
       locationName: location,
+      currentTemp: json['current']['temp']-273.15,
       minTemp: json['daily'][0]['temp']['min']-273.15,
       maxTemp: json['daily'][0]['temp']['max']-273.15,
+      itemStartTime: itemStartTime,
+      itemEndTime: itemEndTime,
+      timezoneOffset: timezoneOffset,
       hourly: hourlyWeather,
       daily: WeatherDaily.fromJson(json['daily'][0]),
     );
@@ -248,9 +353,9 @@ class WeatherHourly {
     required this.temperature,
   });
 
-  factory WeatherHourly.fromJson(Map<String, dynamic> json) {
+  factory WeatherHourly.fromJson(Map<String, dynamic> json,int timezoneOffset) {
     return WeatherHourly(
-      dateTime: DateTime.fromMillisecondsSinceEpoch(json['dt'] * 1000),
+      dateTime: DateTime.fromMillisecondsSinceEpoch(json['dt'] * 1000).add(Duration(seconds: timezoneOffset)),
       icon: json['weather'][0]['icon'],
       temperature: json['temp']-273.15,
     );
@@ -273,4 +378,3 @@ class WeatherDaily {
     );
   }
 }
-
