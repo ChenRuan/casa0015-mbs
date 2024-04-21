@@ -19,6 +19,7 @@ class WeatherPage extends StatefulWidget {
 
 class _WeatherPageState extends State<WeatherPage> {
   List<WeatherData> weatherData = [];
+  Map<String, WeatherData> weatherCache = {};
 
   @override
   void initState() {
@@ -41,22 +42,24 @@ class _WeatherPageState extends State<WeatherPage> {
       return itemStartTime.isAfter(oneHourAgo) || (hasEndTime && itemEndTime.isAfter(oneHourAgo));
     }).toList();
 
-    List<WeatherData> fetchedWeatherData = [];
-
     for (var item in relevantItems) {
       print(item.location!);
-      WeatherData weather = await fetchWeatherData(item.placeLat!, item.placeLng!, item, item.location!);
-      fetchedWeatherData.add(weather);
-      if(item.destination != null && item.destination!.isNotEmpty){
-        WeatherData destinationWeather = await fetchWeatherData(item.destinationLat!, item.destinationLng!, item, item.destination!);
-        fetchedWeatherData.add(destinationWeather);
+      String locationName = extractPlaceName(item.location!);
+      if (!weatherCache.containsKey(locationName)) {
+        WeatherData weather = await fetchWeatherData(item.placeLat!, item.placeLng!, item, item.location!);
+        weatherCache[locationName] = weather;
+        if(item.destination != null && item.destination!.isNotEmpty){
+          WeatherData destinationWeather = await fetchWeatherData(item.destinationLat!, item.destinationLng!, item, item.destination!);
+          weatherCache[item.destination!] = destinationWeather;
+        }
       }
     }
 
     setState(() {
-      weatherData = fetchedWeatherData;
+      weatherData = weatherCache.values.toList();
     });
   }
+
 
   String extractPlaceName(String? place) {
     if (place == null) return '';
@@ -111,7 +114,7 @@ class _WeatherPageState extends State<WeatherPage> {
       body: ListView.builder(
         itemCount: weatherData.length,
         itemBuilder: (context, index) {
-          return WeatherCard(weather: weatherData[index]);
+          return WeatherCard(weather: weatherData[index], cache: weatherCache);
         },
       ),
     );
@@ -120,8 +123,9 @@ class _WeatherPageState extends State<WeatherPage> {
 
 class WeatherCard extends StatefulWidget {
   final WeatherData weather;
+  final Map<String, WeatherData> cache;
 
-  WeatherCard({Key? key, required this.weather}) : super(key: key);
+  WeatherCard({Key? key, required this.weather, required this.cache}) : super(key: key);
 
   @override
   _WeatherCardState createState() => _WeatherCardState();
@@ -139,9 +143,13 @@ class _WeatherCardState extends State<WeatherCard> {
 
   @override
   Widget build(BuildContext context) {
+    String locationName = widget.weather.locationName;
+    WeatherData? cachedWeather = widget.cache[locationName];
+    WeatherData weatherData = cachedWeather ?? widget.weather;
+
     return GestureDetector(
       onTap: () {
-        if (widget.weather != null) { // Add null check here
+        if (widget.weather != null) {
           setState(() {
             isExpanded = !isExpanded;
           });
@@ -179,7 +187,7 @@ class _WeatherCardState extends State<WeatherCard> {
                     children: [
                       Expanded(
                         child: Text(
-                          '${widget.weather.locationName}',
+                          '${weatherData.locationName}',
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 3.0, color: Colors.white, offset: Offset(0.0, 0.0))]),
                         ),
                       ),
@@ -187,7 +195,7 @@ class _WeatherCardState extends State<WeatherCard> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            '${widget.weather.currentTemp.toStringAsFixed(0)}°C',
+                            '${weatherData.currentTemp.toStringAsFixed(0)}°C',
                             style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 3.0, color: Colors.white, offset: Offset(0.0, 0.0))]),
                           ),
                         ],
@@ -201,13 +209,13 @@ class _WeatherCardState extends State<WeatherCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Image.network(
-                            'http://openweathermap.org/img/wn/${widget.weather.daily.icon}@2x.png',
+                            'http://openweathermap.org/img/wn/${weatherData.daily.icon}@2x.png',
                             width: 50,
                           ),
                         ],
                       ),
                       Text(
-                        '${widget.weather.minTemp.toStringAsFixed(0)}°C - ${widget.weather.maxTemp.toStringAsFixed(0)}°C',
+                        '${weatherData.minTemp.toStringAsFixed(0)}°C - ${weatherData.maxTemp.toStringAsFixed(0)}°C',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 3.0, color: Colors.white, offset: Offset(0.0, 0.0))]),
                         textAlign: TextAlign.right,
                       ),
@@ -216,7 +224,7 @@ class _WeatherCardState extends State<WeatherCard> {
                 ],
               ),
             ),
-            if (isExpanded) buildHourlyWeatherList(widget.weather.hourly, widget.weather.itemStartTime,widget.weather.itemEndTime),
+            if (isExpanded) buildHourlyWeatherList(weatherData.hourly, weatherData.itemStartTime,weatherData.itemEndTime),
           ],
         ),
       ),
