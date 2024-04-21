@@ -32,7 +32,7 @@ Email: zczqrua@ucl.ac.uk / luigizero@163.com
 
 ## Todo Improvements
 
-1. 修改plan时候可以给提示，可能会造成信息损失
+1. 修改plan时候可以给提示，可能会造成信息损失(no need to do)
 2. planDetailPage可以加地图
 3. 如果上一次在某个travel中，则自动进入旅行模式
 4. 如果没有plan，给出提示
@@ -45,4 +45,4 @@ Email: zczqrua@ucl.ac.uk / luigizero@163.com
 11. 自动定位
 12. 地图上名称显示错误
 13. ~~优化：多个相同地点存在时 finished~~
-14. travel页面样式修改
+14. ~~travel页面样式修改~~
