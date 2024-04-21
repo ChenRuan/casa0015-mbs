@@ -45,20 +45,19 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         .toList();
     List<Map<String, dynamic>> allLists = [];
 
+
     for (String key in keys) {
       String? savedData = prefs.getString(key);
       if (savedData != null) {
         try {
-          var decodedData = jsonDecode(savedData);
-          if (decodedData is Map) {
-            allLists.add({
-              'uid': decodedData['uid'],
-              'title': decodedData['title'],
-              'tasks': decodedData['tasks'],
-            });
-          } else {
-            print("Unexpected JSON format for key $key");
-          }
+          var decodedData = jsonDecode(savedData) as Map<String, dynamic>;
+          List<dynamic> tasks = decodedData['tasks'] != null ? List.from(decodedData['tasks']) : [];
+          allLists.add({
+            'uid': decodedData['uid'],
+            'title': decodedData['title'],
+            'tasks': tasks, // 确保tasks字段总是一个列表
+          });
+          print('$key,$decodedData');
         } catch (e) {
           print("Error parsing ToDo list data for key $key: $e");
         }

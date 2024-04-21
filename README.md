@@ -44,4 +44,5 @@ Email: zczqrua@ucl.ac.uk / luigizero@163.com
 10. 镜头没有挪过去(只需要挪当天的就行)
 11. 自动定位
 12. 地图上名称显示错误
-13. 优化：多个相同地点存在时 finished
+13. ~~优化：多个相同地点存在时 finished~~
+14. travel页面样式修改

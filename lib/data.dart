@@ -1,6 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
+class Todolist {
+  String uid;
+  String title;
+  List<Task> tasks;
+
+  Todolist({
+    required this.uid,
+    required this.title,
+    required this.tasks,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'uid': uid,
+      'title': title,
+      'tasks': tasks.map((task) => task.toJson()).toList(),
+    };
+  }
+
+  factory Todolist.fromJson(Map<String, dynamic> json) {
+    return Todolist(
+      uid: json['uid'],
+      title: json['title'],
+      tasks: List<Task>.from(json['tasks']?.map((x) => Task.fromJson(x)) ?? []),
+    );
+  }
+
+}
+
+class Task {
+  String task;
+  bool completed;
+
+  Task({
+    required this.task,
+    required this.completed,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'task': task,
+      'completed': completed,
+    };
+  }
+
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      task: json['task'],
+      completed: json['completed'],
+    );
+  }
+}
+
 class Plan {
   String id;
   String name;

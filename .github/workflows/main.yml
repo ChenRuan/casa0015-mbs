@@ -56,6 +56,7 @@ jobs:
         run: flutter build apk --release
         env:
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
 
       - name: Build an AppBundle            # App Bundles are useful for Google Play Store
         run: flutter build appbundle --release
