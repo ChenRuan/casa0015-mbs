@@ -13,6 +13,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
 
   @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -21,7 +22,7 @@ class _LoginPageState extends State<LoginPage> {
       body: Padding(
         padding: EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             TextField(
               controller: _emailController,
@@ -33,18 +34,26 @@ class _LoginPageState extends State<LoginPage> {
               obscureText: true,
             ),
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                _signInWithEmailAndPassword(context);
-              },
-              child: Text('Sign In'),
-            ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                _registerWithEmailAndPassword();
-              },
-              child: Text('Register'),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _signInWithEmailAndPassword(context);
+                    },
+                    child: Text('Sign In'),
+                  ),
+                ),
+                SizedBox(width: 10), // Spacing between the buttons
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _registerWithEmailAndPassword();
+                    },
+                    child: Text('Register'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

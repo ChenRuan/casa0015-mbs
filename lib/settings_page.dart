@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data.dart';
+import 'main.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -94,59 +95,126 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: _buildSettingsList(),
+          children: _buildSettingsList(context),
         ),
       ),
     );
   }
 
-  List<Widget> _buildSettingsList() {
+  Future<void> confirmDownload(String userId) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirm Download'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('You are about to download data from the cloud.', style: TextStyle(fontSize:16,)),
+                Text('*This may cause loss of current data.', style: TextStyle(fontSize:12,color: Colors.red)),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Download'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                downloadAndSaveData(userId);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
+  List<Widget> _buildSettingsList(BuildContext context) {
     List<Widget> settingsList = [];
 
     if (_isLoggedIn) {
       // 如果已登录
-      settingsList.add(Text('Username: $_username')); // 第一条用户名
-      settingsList.add(ElevatedButton(
-        onPressed: () {
-          _logout();
-        },
-        child: const Text('Logout'),
-      )); // 第二条logout按钮
-      settingsList.add(ElevatedButton(
-        onPressed: () {
-          FirebaseUploader().uploadSharedPreferencesData(_username);
-        },
-        child: const Text('Upload'),
-      )); // 第三条上传按钮
-      settingsList.add(ElevatedButton(
-        onPressed: () {
-          downloadAndSaveData(_username);
-        },
-        child: const Text('Download'),
-      )); // 第四条下载按钮
+      settingsList.add(
+          ListTile(
+            title: Text('User: $_username',style:TextStyle(fontSize: 18),),
+            leading: Icon(Icons.person),
+          )
+      );
+      settingsList.add(Divider());
+
+      settingsList.add(
+          ListTile(
+            title: const Text('Logout',style:TextStyle(fontSize: 18),),
+            leading: Icon(Icons.exit_to_app),
+            onTap: _logout,
+          )
+      );
+      settingsList.add(Divider());
+
+      settingsList.add(
+          ListTile(
+            title: const Text('Upload data to Cloud',style:TextStyle(fontSize: 18),),
+            leading: Icon(Icons.cloud_upload),
+            onTap: () {
+              FirebaseUploader().uploadSharedPreferencesData(_username,context);
+              scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text('Upload finished!')));
+            },
+          )
+      );
+      settingsList.add(Divider());
+
+      settingsList.add(
+          ListTile(
+            title: const Text('Download data From Cloud',style:TextStyle(fontSize: 18),),
+            leading: Icon(Icons.cloud_download),
+            onTap: () {
+              confirmDownload(_username);
+              scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text('Download finished!')));
+            },
+          )
+      );
+      settingsList.add(Divider());
     } else {
-      settingsList.add(ElevatedButton(
-        onPressed: () async {
-          final userEmail = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => LoginPage(),
-            ),
-          );
-          if (userEmail != null) {
-            SharedPreferences prefs = await SharedPreferences.getInstance();
-            await prefs.setBool('isLoggedIn', true);
-            await prefs.setString('username', userEmail);
-            _checkLoginStatus();
-          }
-        },
-        child: const Text('Login'),
-      ));
+      settingsList.add(
+          ListTile(
+            title: const Text('Login',style:TextStyle(fontSize: 18),),
+            leading: Icon(Icons.login),
+            onTap: () async {
+              final userEmail = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LoginPage(),
+                ),
+              );
+              if (userEmail != null) {
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('isLoggedIn', true);
+                await prefs.setString('username', userEmail);
+                _checkLoginStatus();
+              }
+            },
+          )
+      );
+      settingsList.add(Divider());
     }
 
-    settingsList.add(const SizedBox(height: 20)); // 添加间隔
-    settingsList.add(Text('Version 0.5.0')); // 版本号
+    settingsList.add(
+        ListTile(
+          title: Text('Version: 0.5.1',style:TextStyle(fontSize: 20),),
+          leading: Icon(Icons.update),
+          onTap: () {
+            // Implement check for updates logic
+          },
+        )
+    );
+    settingsList.add(Divider());
 
     return settingsList;
   }
@@ -156,7 +224,7 @@ class FirebaseUploader {
   final DatabaseReference _databaseReference =
   FirebaseDatabase.instance.ref();
 
-  Future<void> uploadSharedPreferencesData(String userId) async {
+  Future<void> uploadSharedPreferencesData(String userId, BuildContext context) async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       List<String> plansList = prefs.getStringList('plans') ?? [];
@@ -219,8 +287,10 @@ class FirebaseUploader {
         print('Error loading and uploading todo lists: $e');
       }
       print('SharedPreferences data uploaded successfully');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload succeeded')));
     } catch (e) {
       print('Error uploading SharedPreferences data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
     }
   }
 
