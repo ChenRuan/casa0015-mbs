@@ -54,8 +54,8 @@ jobs:
 
       - name: Create Config File
         run: |
-          echo "const String GOOGLE_MAPS_API_KEY = '${{ secrets.GOOGLE_MAPS_API_KEY }}';" > lib/google_api_secrets.dart
-          echo "const String WEATHER_API_KEY  = '${{ secrets.WEATHER_API_KEY }}';" >> lib/google_api_secrets.dart
+          echo "const String GOOGLE_MAPS_API_KEY = '${{ secrets.GOOGLE_MAPS_API_KEY }}';" > lib/config.dart
+          echo "const String WEATHER_API_KEY  = '${{ secrets.WEATHER_API_KEY }}';" >> lib/config.dart
 
       - name: Build APK Release             # Build a release
         run: flutter build apk --release
