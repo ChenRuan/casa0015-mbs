@@ -2,8 +2,8 @@
 
 ---
 title: "CASA0017: Web Architecture Final Assessment"
-author: "Steven Gray"
-date: "10 Dec 2021"
+author: "Chen Ruan"
+date: "22 Apr 2024"
 ---
 
 -->
@@ -20,27 +20,30 @@ Upload this PDF into Moodle for submission including a copy of your presentation
 
 ## Link to GitHub Repository
 
-Flutter Application Name - MY APPLICATION NAME
-GitHub Repository - [https://github.com/ucl-casa-ce/casa0015-mobile-assessment](https://github.com/ucl-casa-ce/casa0015-mobile-assessment)
+Flutter Application Name - EzTour
+GitHub Repository - [https://github.com/ChenRuan/casa0015-mbs](https://github.com/ChenRuan/casa0015-mbs)
 
 ## Introduction to Application
 
-A brief 200 word explanation of your application and it's use.  Below create a Bibliography to code, tutorial, or plugins you've used in the project. Use this guide
-for citation - [https://www.scribbr.co.uk/referencing/harvard-website-reference/](https://www.scribbr.co.uk/referencing/harvard-website-reference/)
+EzTour, an innovative travel planning app, is the perfect companion for explorers around the world. The app is designed to make the travel experience easier for all the travellers. It gives the user an opportunity to plan and create his own itinerary in an easy way. It allows all the users to add the to do list, attractions, and transportation they prefer in their own journey.
 
-## Biblography
+Another way that EzTour stands out from other travel apps is that it can connect with its environmental context. It will provide real-time weather information and detailed route information for each destination so that travellers can prepare for any weather conditions. This contributes to traveller safety, and helps to ensure that travel plans can adapt to changing weather.
 
-1. Last name, First initial. (Year published). Title. Edition. (Only include the edition if it is not the first edition) City published: Publisher, Page(s). <http://google.com>
+Moreover, EzTour supports cloud synchronization, which helps users upload travel plans to the cloud, ensuring all travel data are secure and retrievable from any computer, at any time and anywhere. EzTour is the ideal companion for all travellers who want to see the world, preserve and share their wonderful memories with confidence and ease.
 
-2. Last name, First initial. (Year published). Title. Edition. (Only include the edition if it is not the first edition) City published: Publisher, Page(s).  <http://google.com>
+## Bibliography
 
-----
+Dart packages. (n.d.). shared_preferences | Flutter Package. [online] Available at: https://pub.dev/packages/shared_preferences [Accessed 22 Apr. 2024].
+Firebase (2019). Firebase Realtime Database. [online] Firebase. Available at: https://firebase.google.com/docs/database [Accessed 22 Apr. 2024].
+Firebase. (n.d.). Firebase Authentication. [online] Available at: https://firebase.google.com/docs/auth?authuser=0 [Accessed 22 Apr. 2024].
+Google Developers. (n.d.). Directions Service | Maps JavaScript API. [online] Available at: https://developers.google.com/maps/documentation/javascript/directions [Accessed 22 Apr. 2024].
+Google for Developers. (n.d.). Place Autocomplete | Maps JavaScript API. [online] Available at: https://developers.google.com/maps/documentation/javascript/place-autocomplete [Accessed 22 Apr. 2024].
+openweathermap.org. (n.d.). One Call API 3.0 - OpenWeatherMap. [online] Available at: https://openweathermap.org/api/one-call-3 [Accessed 22 Apr. 2024].
 
 ## Declaration of Authorship
 
-We, AUTHORS NAME HERE, confirm that the work presented in this assessment is my own. Where information has been derived from other sources, I confirm that this has been indicated in the work.
+I, Chen Ruan, confirm that the work presented in this assessment is my own. Where information has been derived from other sources, I confirm that this has been indicated in the work.
 
+Chen Ruan
 
-Digitally Sign with Your name Here
-
-ASSESSMENT DATE
+22 Apr 2024
