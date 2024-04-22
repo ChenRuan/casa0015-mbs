@@ -29,8 +29,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        scaffoldBackgroundColor: Colors.white,  // 设置全局背景色为白色
-        // 可以在这里设置更多主题属性，比如主色调、字体样式等
+        scaffoldBackgroundColor: Colors.white,
+        primaryColor: Colors.white,
+        bottomAppBarTheme: BottomAppBarTheme(color: Colors.white), // 设置底部导航栏的颜色
       ),
       home: SplashScreen(),
     );

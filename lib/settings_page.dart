@@ -216,7 +216,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     settingsList.add(
         ListTile(
-          title: Text('Version: 0.6.1',style:TextStyle(fontSize: 20),),
+          title: Text('Version: 0.6.2',style:TextStyle(fontSize: 20),),
           leading: Icon(Icons.update),
           onTap: () {
             // Implement check for updates logic

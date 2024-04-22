@@ -64,7 +64,7 @@ class _PlansPageState extends State<PlansPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Plans Page'),
+        title: Text('Plans'),
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.add),
