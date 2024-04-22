@@ -93,16 +93,65 @@ class _ToDoListPageState extends State<ToDoListPage> {
 
     await prefs.setString(key, jsonEncode({'uid': uid, 'title': titleController.text, 'tasks': taskData}));
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('List saved!')));
+    if (widget.uid == null) {
+      Navigator.pop(context);
+    }
     Navigator.pop(context);
-    Navigator.pop(context);
+  }
+
+  Future<void> deleteToDoList() async {
+    if (widget.uid != null) {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.remove('todo_${widget.planId}_${widget.day}_${widget.uid}');
+      Navigator.pop(context); // Exit after deletion
+    }
+  }
+
+  void confirmDeleteList() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirm Delete'),
+          content: Text('Are you sure you want to delete this entire list?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                deleteToDoList();
+                Navigator.of(context).pop();
+              },
+              child: Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('To-Do List for Day ${widget.day}'),
+        title: Padding(
+          padding: EdgeInsets.only(right: 48),  // 根据右侧按钮的数量调整
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(widget.uid != null ?'Edit To Do List':"Add New To Do List", style: TextStyle(fontSize: 18)),
+              Text('DAY ${widget.day}', style: TextStyle(fontSize: 14)),
+            ],
+          ),
+        ),
         actions: [
+          if (widget.uid != null) IconButton(
+            icon: Icon(Icons.delete),
+            onPressed: confirmDeleteList,
+          ),
           IconButton(
             icon: Icon(Icons.save),
             onPressed: saveTasks,

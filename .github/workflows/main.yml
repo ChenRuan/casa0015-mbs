@@ -52,6 +52,11 @@ jobs:
       - name: Get Flutter dependencies      # Get the Libraries and Dependencies
         run: flutter pub get
 
+      - name: Create Config File
+        run: |
+          echo "static String googleMapsApiKey = '${{ secrets.GOOGLE_MAPS_API_KEY }}';" > lib/google_api_secrets.dart
+          echo "static String WeatherApiKey = '${{ secrets.WEATHER_API_KEY }}';" >> lib/google_api_secrets.dart
+
       - name: Build APK Release             # Build a release
         run: flutter build apk --release
         env:
