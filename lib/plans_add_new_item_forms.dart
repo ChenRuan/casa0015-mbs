@@ -1,9 +1,11 @@
 import 'package:eztour/data.dart';
+import 'package:eztour/get_location.dart';
 import 'package:eztour/google_api_secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:google_places_flutter/model/prediction.dart';
+import 'package:location/location.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
@@ -31,7 +33,7 @@ class _DetailFormPageState extends State<DetailFormPage> {
   final _endTimeController = TextEditingController();
   final _notesController = TextEditingController();
   late GoogleMapController mapController;
-  LatLng _currentPosition = LatLng(51.5382687,-0.0123281);
+  late LatLng _currentPosition;
   LatLng? _destinationPosition;
   Set<Marker> _markers = {};
   Set<Polyline> _polylines = {};
@@ -47,6 +49,17 @@ class _DetailFormPageState extends State<DetailFormPage> {
   @override
   void initState() {
     super.initState();
+    _initializePage();
+  }
+
+  void _initializePage() async {
+    LocationData? currentLocation = await getLocation(); // Get current location
+    if (currentLocation != null) {
+      _currentPosition = LatLng(currentLocation.latitude!, currentLocation.longitude!);
+    } else {
+      _currentPosition = LatLng(51.508530, -0.076132);
+    }
+
     if (widget.planItem != null) {
       _titleController.text = widget.planItem!.title;
       _startTimeController.text = widget.planItem!.startTime ?? '';
@@ -61,6 +74,7 @@ class _DetailFormPageState extends State<DetailFormPage> {
       }
       _notesController.text = widget.planItem!.notes ?? '';
     }
+    setState(() {});
   }
 
   void _loadAndDrawRoute() {
@@ -73,6 +87,7 @@ class _DetailFormPageState extends State<DetailFormPage> {
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
     _updateMapLocation();
+    mapController.animateCamera(CameraUpdate.newLatLng(_currentPosition!));
     if (_currentPosition != null && _destinationPosition != null) {
       _loadAndDrawRoute();
     }

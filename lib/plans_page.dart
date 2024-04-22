@@ -1,10 +1,12 @@
 import 'package:eztour/data.dart';
 import 'package:eztour/plans_add_new_plan.dart';
 import 'package:eztour/plans_detail.dart';
+import 'package:eztour/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:event_bus/event_bus.dart';
 
 class PlansPage extends StatefulWidget {
   @override
@@ -18,6 +20,11 @@ class _PlansPageState extends State<PlansPage> {
   void initState() {
     super.initState();
     _loadPlans();
+    eventBus.on<DownloadCompleteEvent>().listen((event) {
+      setState(() {
+        _loadPlans();
+      });
+    });
   }
 
   void _loadPlans() async {
@@ -70,7 +77,11 @@ class _PlansPageState extends State<PlansPage> {
           ),
         ],
       ),
-      body: ListView.builder(
+      body: _items.isEmpty
+          ? Align(
+        alignment: Alignment.center,
+        child: Text("There is no plan. \n\nClick the add button to create one.", style: TextStyle(fontSize: 18),textAlign: TextAlign.center,),
+      ):ListView.builder(
         itemCount: _items.length,
         itemBuilder: (context, index) {
           final item = _items[index];
@@ -114,6 +125,7 @@ class _PlansPageState extends State<PlansPage> {
                       builder: (context) => PlanDetailPage(plan: item),
                     ),
                   ).then((_) => _loadPlans());
+                  eventBus.fire(DownloadCompleteEvent());
                 },
               ),
             );
@@ -142,6 +154,7 @@ class _PlansPageState extends State<PlansPage> {
       context,
       MaterialPageRoute(builder: (context) => AddNewPlanPage(plan: plan)),
     ).then((_) => _loadPlans());
+    eventBus.fire(DownloadCompleteEvent());
   }
 
   void _deletePlan(Plan plan) async {
@@ -153,6 +166,7 @@ class _PlansPageState extends State<PlansPage> {
       'plans',
       _items.where((item) => item is Plan).map((plan) => json.encode((plan as Plan).toJson())).toList(),
     );
+    eventBus.fire(DownloadCompleteEvent());
   }
 }
 

@@ -20,7 +20,7 @@ void main() {
 }
 
 class ApplicationState with ChangeNotifier {
-  // 添加你的状态和方法
+
 }
 
 class MyApp extends StatelessWidget {

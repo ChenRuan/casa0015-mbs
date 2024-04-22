@@ -14,6 +14,7 @@ import 'package:http/http.dart' as http;
 import 'package:eztour/get_location.dart';
 import 'google_api_secrets.dart';
 
+
 class TravelModePage extends StatefulWidget {
   final Plan plan;
 
@@ -40,23 +41,13 @@ class _TravelModePageState extends State<TravelModePage> {
   @override
   void initState() {
     super.initState();
-    _currentDay = 1;
     _totalDays = widget.plan.travelDays;
+    _setCurrentDayBasedOnToday();
     _loadPlanItems();
-    _loadToDoLists().then((data) {
-      setState(() {
-        _todoLists = data;
-      });
-    });
+    _loadToDoLists();
     print(_planItems);
     print(widget.plan.id);
-    _timer = Timer.periodic(Duration(minutes: 1), (Timer t) {
-      if (_selectedItem != null) {
-        _moveCameraToSelectedLocation(_selectedItem!);
-      } else{
-        _moveCameraToSelectedLocation(_highlightedItem!);
-      }
-    });
+    saveTravelState(widget.plan);
   }
 
   @override
@@ -66,7 +57,38 @@ class _TravelModePageState extends State<TravelModePage> {
     super.dispose();
   }
 
-  Future<List<Map<String, dynamic>>> _loadToDoLists() async {
+  Future<void> saveTravelState(Plan plan) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isTraveling', true);
+    await prefs.setString('planId', plan.id);
+    await prefs.setString('startDate', plan.startDate.toIso8601String());
+    await prefs.setString('endDate', plan.endDate.toIso8601String());
+  }
+
+  Future<void> clearTravelState() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('isTraveling');
+    await prefs.remove('planId');
+    await prefs.remove('startDate');
+    await prefs.remove('endDate');
+  }
+
+  void _setCurrentDayBasedOnToday() {
+    DateTime today = DateTime.now();
+    DateTime startDate = widget.plan.startDate;
+    DateTime endDate = widget.plan.endDate;
+    int differenceInDays = today.difference(startDate).inDays;
+
+    if (today.isBefore(startDate)) {
+      _currentDay = 0;
+    } else if (today.isAfter(endDate)) {
+      _currentDay = widget.plan.travelDays;
+    } else {
+      _currentDay = min(differenceInDays + 1, _totalDays);
+    }
+  }
+
+  Future<void> _loadToDoLists() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final keys = prefs
         .getKeys()
@@ -93,7 +115,9 @@ class _TravelModePageState extends State<TravelModePage> {
         }
       }
     }
-    return allLists;
+    setState(() {
+      _todoLists = allLists;
+    });
   }
 
   Widget _buildHorizontalToDoLists() {
@@ -160,13 +184,25 @@ class _TravelModePageState extends State<TravelModePage> {
     return '';
   }
 
-  void _loadPlanItems() async {
+  int _calculateCurrentDayIndex() {
+    DateTime today = DateTime.now();
+    DateTime startDate = widget.plan.startDate;
+    if (today.isBefore(startDate)) {
+      // 如果今天的日期在旅行开始日期之前
+      return -1; // 表示今天不是有效的旅行日期
+    }
+    int differenceInDays = today.difference(startDate).inDays;
+    return differenceInDays + 1;
+  }
+
+  Future<void> _loadPlanItems() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String itemsKey = 'items_${widget.plan.id}';
     List<String>? itemsJson = prefs.getStringList(itemsKey);
     if (itemsJson != null) {
       List<PlanItem> items = itemsJson
           .map((itemJson) => PlanItem.fromJson(json.decode(itemJson)))
+          .where((item) => item.day == _currentDay)  // 筛选出当天的活动
           .toList();
 
       items.sort((a, b) {
@@ -190,27 +226,34 @@ class _TravelModePageState extends State<TravelModePage> {
 
   void _goToNextDay() {
     if (_currentDay < _totalDays) {
+      _clearPolylines();
       setState(() {
         _currentDay++;
-        _loadToDoLists().then((data) {
-          setState(() {
-            _todoLists = data;
-            _moveCameraToSelectedLocation(_highlightedItem!);
-          });
+      });
+      Future.wait([
+        _loadPlanItems(),
+        _loadToDoLists()
+      ]).then((_) {
+        setState(() {
+          _moveCameraToSelectedLocation(_highlightedItem!);
         });
       });
     }
   }
 
+
   void _goToPreviousDay() {
     if (_currentDay > 0) {
+      _clearPolylines();
       setState(() {
         _currentDay--;
-        _loadToDoLists().then((data) {
-          setState(() {
-            _todoLists = data;
-            _moveCameraToSelectedLocation(_highlightedItem!);
-          });
+      });
+      Future.wait([
+        _loadPlanItems(),
+        _loadToDoLists()
+      ]).then((_) {
+        setState(() {
+          _moveCameraToSelectedLocation(_highlightedItem!);
         });
       });
     }
@@ -340,6 +383,13 @@ class _TravelModePageState extends State<TravelModePage> {
     });
   }
 
+  void _clearPolylines() {
+    setState(() {
+      _polylines.clear();
+      _markers.clear();
+    });
+  }
+
   void _selectItem(PlanItem item) {
     setState(() {
       _selectedItem = item;
@@ -351,6 +401,7 @@ class _TravelModePageState extends State<TravelModePage> {
   void _moveCameraToSelectedLocation(PlanItem item) async {
     Set<Marker> markers = {};
     List<LatLng> points = [];
+    List<LatLng> focusPoints = [];
 
     // Check for current location
     LocationData? _currentLocation = await getLocation();
@@ -368,9 +419,12 @@ class _TravelModePageState extends State<TravelModePage> {
             icon: BitmapDescriptor.defaultMarkerWithHue(
                 planItem == item ? BitmapDescriptor.hueRed : BitmapDescriptor
                     .hueBlue),
-            infoWindow: InfoWindow(title: '${item.title}: ${item.location} '),
+            infoWindow: InfoWindow(title: '${planItem.title}: ${planItem.location} '),
           ));
           points.add(position);
+          if (planItem == item) {
+            focusPoints.add(position);
+          }
         }
       }
       // Add destination marker if exists
@@ -381,9 +435,12 @@ class _TravelModePageState extends State<TravelModePage> {
             markerId: MarkerId('${planItem.id}_dest'),
             position: destPosition,
             icon: BitmapDescriptor.defaultMarkerWithHue(planItem == item ? BitmapDescriptor.hueRed : BitmapDescriptor.hueBlue),
-            infoWindow: InfoWindow(title: 'Destination of ${item.title}: ${item.location} '),
+            infoWindow: InfoWindow(title: 'Destination of ${planItem.title}: ${planItem.destination} '),
           ));
           points.add(destPosition);
+          if (planItem == item) {
+            focusPoints.add(destPosition);
+          }
         }
       }
     }
@@ -397,21 +454,26 @@ class _TravelModePageState extends State<TravelModePage> {
         points.add(destinationPosition);
       } else {
         await _drawRoute(_mapController!, _currentPosition, LatLng(item.placeLat ?? 0, item.placeLng ?? 0), Colors.blue, 5, "current_to_dest");
+        focusPoints.add(_currentPosition);
       }
     }
     // Calculate bounds to include all markers and user's current location
-    if (points.isNotEmpty) {
-      double minLat = points.map((p) => p.latitude).reduce(min);
-      double maxLat = points.map((p) => p.latitude).reduce(max);
-      double minLng = points.map((p) => p.longitude).reduce(min);
-      double maxLng = points.map((p) => p.longitude).reduce(max);
-      LatLngBounds bounds = LatLngBounds(
-          southwest: LatLng(minLat, minLng),
-          northeast: LatLng(maxLat, maxLng)
-      );
-      _mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50.0));
-      print("points: ${points}");
-    } else{
+    if (focusPoints.isNotEmpty) {
+      if (focusPoints.length > 1) {
+        double minLat = focusPoints.map((p) => p.latitude).reduce(min);
+        double maxLat = focusPoints.map((p) => p.latitude).reduce(max);
+        double minLng = focusPoints.map((p) => p.longitude).reduce(min);
+        double maxLng = focusPoints.map((p) => p.longitude).reduce(max);
+        LatLngBounds bounds = LatLngBounds(
+            southwest: LatLng(minLat, minLng),
+            northeast: LatLng(maxLat, maxLng)
+        );
+        _mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+      } else {
+        _mapController?.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: focusPoints.first, zoom: 15)));
+      }
+    }
+    else{
       _mapController?.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: _currentPosition, zoom: 15)));
       print("no location");
     }
@@ -441,9 +503,6 @@ class _TravelModePageState extends State<TravelModePage> {
       setState(() {
         _polylines.add(line);
       });
-      LatLngBounds bounds = _bounds(points);
-      CameraUpdate update = CameraUpdate.newLatLngBounds(bounds, 30);
-      mapController.animateCamera(update);
     }
   }
 
@@ -535,6 +594,7 @@ class _TravelModePageState extends State<TravelModePage> {
 
   @override
   Widget build(BuildContext context) {
+    int todayIndex = _calculateCurrentDayIndex();
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -547,6 +607,7 @@ class _TravelModePageState extends State<TravelModePage> {
         ),
         centerTitle: true,
         actions: <Widget>[
+          if (_currentDay == todayIndex)
           IconButton(
             icon: Icon(Icons.wb_sunny),
             onPressed: () {
@@ -577,7 +638,16 @@ class _TravelModePageState extends State<TravelModePage> {
             ),
           ),
           _buildHorizontalToDoLists(),
-          Expanded(
+          _planItems.isEmpty
+              ? Padding(
+            padding: EdgeInsets.only(top: 200.0),
+            child: Center(
+              child: Text(
+                "No items today.",
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ) :Expanded(
             child: ListView.builder(
               itemCount:
               _planItems.where((item) => item.day == _currentDay).length,

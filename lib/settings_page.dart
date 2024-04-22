@@ -8,6 +8,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'data.dart';
 import 'main.dart';
 
+import 'package:event_bus/event_bus.dart';
+
+EventBus eventBus = EventBus();
+
+class DownloadCompleteEvent {}
+
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
 
@@ -82,6 +88,9 @@ class _SettingsPageState extends State<SettingsPage> {
         prefs.setString('$key', json.encode(value));
       });
     }
+
+    eventBus.fire(DownloadCompleteEvent());
+    print('download finished');
   }
 
   @override

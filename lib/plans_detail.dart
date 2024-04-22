@@ -285,6 +285,16 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       body: Column(
         children: [
           _buildHorizontalToDoLists(),
+          _planItems.where((item) => item.day == _currentDay).length == 0
+              ? Padding(
+            padding: EdgeInsets.only(top: 250.0),  // 在文本上方添加20像素的空间
+            child: Center(
+              child: Text(
+                "No items today.",
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ) :
           Expanded(
             child: ListView.builder(
               itemCount:
