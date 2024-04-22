@@ -2,6 +2,8 @@
 
 Welcome to the EzTour Mobile App repository! This app is designed to revolutionize the way individuals plan and experience travel. By integrating real-time weather updates and navigation tailored to your travel itinerary, EzTour ensures that you are always connected and informed, making your travel experiences seamless and enjoyable. Whether you’re a casual traveler or a seasoned explorer, EzTour provides you with the tools you need to plan for the new destinations, navigate unfamiliar locales, and experience travel like never before.
 
+Landing Page Link: [Landing Page](https://eztour.my.canva.site/landing-page)
+
 ## Highlights
 
 🗺 **Customizable Planning:** Customize and store your travel plans with flexibility. Add a variety of items to your itinerary, including to-do lists, scenic spots, and transport options, tailoring each journey to your preferences.
@@ -22,8 +24,6 @@ Welcome to the EzTour Mobile App repository! This app is designed to revolutioni
 
 ## Video Demos
 [![Watch the Video](https://i9.ytimg.com/vi/b7rrMYyVclY/mqdefault.jpg?sqp=COy6mrEG-oaymwEmCMACELQB8quKqQMa8AEB-AHgBIACgAqKAgwIABABGGUgZShlMA8=&rs=AOn4CLAHZvK6Jy5jKDmkcJFXnVXAE1Rxkg)](https://youtu.be/b7rrMYyVclY "Watch the Video")
-
-
 
 ## Installation
 
