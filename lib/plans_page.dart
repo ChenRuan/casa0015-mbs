@@ -1,7 +1,7 @@
-import 'package:eztour/data.dart';
-import 'package:eztour/plans_add_new_plan.dart';
-import 'package:eztour/plans_detail.dart';
-import 'package:eztour/settings_page.dart';
+import 'package:EzTour/data.dart';
+import 'package:EzTour/plans_add_new_plan.dart';
+import 'package:EzTour/plans_detail.dart';
+import 'package:EzTour/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';

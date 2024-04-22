@@ -1,8 +1,8 @@
-import 'package:eztour/plans_page.dart';
-import 'package:eztour/settings_page.dart';
-import 'package:eztour/travel_mode_page.dart';
+import 'package:EzTour/plans_page.dart';
+import 'package:EzTour/settings_page.dart';
+import 'package:EzTour/travel_mode_page.dart';
 import 'package:flutter/material.dart';
-import 'package:eztour/data.dart'; // Ensure you have a Plan class and related methods
+import 'package:EzTour/data.dart'; // Ensure you have a Plan class and related methods
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 

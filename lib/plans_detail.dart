@@ -1,9 +1,9 @@
-import 'package:eztour/plans_add_new_item_forms.dart';
-import 'package:eztour/plans_add_new_item_tdl.dart';
+import 'package:EzTour/plans_add_new_item_forms.dart';
+import 'package:EzTour/plans_add_new_item_tdl.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:eztour/plans_add_new_item.dart';
-import 'package:eztour/data.dart';
+import 'package:EzTour/plans_add_new_item.dart';
+import 'package:EzTour/data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 

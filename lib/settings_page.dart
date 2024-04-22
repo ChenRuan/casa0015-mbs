@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:eztour/settings_login_page.dart';
+import 'package:EzTour/settings_login_page.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -216,7 +216,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     settingsList.add(
         ListTile(
-          title: Text('Version: 0.6.2',style:TextStyle(fontSize: 20),),
+          title: Text('Version: 0.6.3',style:TextStyle(fontSize: 20),),
           leading: Icon(Icons.update),
           onTap: () {
             // Implement check for updates logic

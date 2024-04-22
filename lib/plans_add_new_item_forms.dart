@@ -1,6 +1,6 @@
-import 'package:eztour/data.dart';
-import 'package:eztour/get_location.dart';
-import 'package:eztour/google_api_secrets.dart';
+import 'package:EzTour/data.dart';
+import 'package:EzTour/get_location.dart';
+import 'package:EzTour/google_api_secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_flutter/google_places_flutter.dart';

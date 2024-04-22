@@ -1,5 +1,5 @@
-import 'package:eztour/plans_add_new_item_forms.dart';
-import 'package:eztour/plans_add_new_item_tdl.dart';
+import 'package:EzTour/plans_add_new_item_forms.dart';
+import 'package:EzTour/plans_add_new_item_tdl.dart';
 import 'package:flutter/material.dart';
 
 class AddNewItemPage extends StatelessWidget {

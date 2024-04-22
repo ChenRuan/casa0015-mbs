@@ -162,8 +162,8 @@ class PlanItem {
     destination: json['destination'] as String? ?? '',
     placeDesLat: json['placeDesLat'] as double? ?? 0.0,
     placeDesLng: json['placeDesLng'] as double? ?? 0.0,
-      destinationLat: json['destinationLat'] as double? ?? 0.0,
-      destinationLng: json['destinationLng'] as double? ?? 0.0,
+      destinationLat: (json['destinationLat'] as num?)?.toDouble() ?? 0.0,
+      destinationLng: (json['destinationLng'] as num?)?.toDouble() ?? 0.0,
     notes: json['notes'] as String? ?? ''
   );
 }

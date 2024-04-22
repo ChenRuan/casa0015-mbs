@@ -1,10 +1,10 @@
 import 'dart:math';
 
-import 'package:eztour/google_api_secrets.dart';
+import 'package:EzTour/google_api_secrets.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:eztour/data.dart';
+import 'package:EzTour/data.dart';
 import 'package:intl/intl.dart';
 
 class WeatherPage extends StatefulWidget {

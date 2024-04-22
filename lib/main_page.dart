@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:eztour/data.dart';
-import 'package:eztour/plans_page.dart';
-import 'package:eztour/settings_page.dart';
-import 'package:eztour/travel_mode_page.dart';
-import 'package:eztour/travel_page.dart';
+import 'package:EzTour/data.dart';
+import 'package:EzTour/plans_page.dart';
+import 'package:EzTour/settings_page.dart';
+import 'package:EzTour/travel_mode_page.dart';
+import 'package:EzTour/travel_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

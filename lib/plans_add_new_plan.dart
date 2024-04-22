@@ -1,4 +1,4 @@
-import 'package:eztour/data.dart';
+import 'package:EzTour/data.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
