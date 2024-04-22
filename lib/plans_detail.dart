@@ -96,7 +96,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                           taskCompletionStatus: taskCompletionStatus,
                         )
                     )
-                );
+                ).then((_) => _loadToDoLists());
               },
               child: Card(
                 child: Container(
