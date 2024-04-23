@@ -11,6 +11,7 @@ date: "22 Apr 2024"
 ## Link to GitHub Repository
 
 Flutter Application Name - EzTour
+
 GitHub Repository - [https://github.com/ChenRuan/casa0015-mbs](https://github.com/ChenRuan/casa0015-mbs)
 
 ## Introduction to Application
@@ -24,10 +25,15 @@ Moreover, EzTour supports cloud synchronization, which helps users upload travel
 ## Bibliography
 
 Dart packages. (n.d.). shared_preferences | Flutter Package. [online] Available at: https://pub.dev/packages/shared_preferences [Accessed 22 Apr. 2024].
+
 Firebase (2019). Firebase Realtime Database. [online] Firebase. Available at: https://firebase.google.com/docs/database [Accessed 22 Apr. 2024].
+
 Firebase. (n.d.). Firebase Authentication. [online] Available at: https://firebase.google.com/docs/auth?authuser=0 [Accessed 22 Apr. 2024].
+
 Google Developers. (n.d.). Directions Service | Maps JavaScript API. [online] Available at: https://developers.google.com/maps/documentation/javascript/directions [Accessed 22 Apr. 2024].
+
 Google for Developers. (n.d.). Place Autocomplete | Maps JavaScript API. [online] Available at: https://developers.google.com/maps/documentation/javascript/place-autocomplete [Accessed 22 Apr. 2024].
+
 openweathermap.org. (n.d.). One Call API 3.0 - OpenWeatherMap. [online] Available at: https://openweathermap.org/api/one-call-3 [Accessed 22 Apr. 2024].
 
 ## Declaration of Authorship
