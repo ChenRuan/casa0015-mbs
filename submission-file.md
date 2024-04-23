@@ -24,6 +24,8 @@ Moreover, EzTour supports cloud synchronization, which helps users upload travel
 
 ## Bibliography
 
+OpenAI, 2024. ChatGPT conversation on Flutter Application. [online] Available at: <https://www.openai.com/> [Accessed 22 April 2024].
+
 Dart packages. (n.d.). shared_preferences | Flutter Package. [online] Available at: https://pub.dev/packages/shared_preferences [Accessed 22 Apr. 2024].
 
 Firebase (2019). Firebase Realtime Database. [online] Firebase. Available at: https://firebase.google.com/docs/database [Accessed 22 Apr. 2024].
